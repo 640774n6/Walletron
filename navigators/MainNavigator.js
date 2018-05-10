@@ -1,8 +1,8 @@
 import React from 'react';
 import { createStackNavigator, createBottomTabNavigator } from 'react-navigation';
-import FontAwesome, { Icons } from 'react-native-fontawesome';
+import { FontAwesome, Entypo } from '@expo/vector-icons';
 
-import AccountScreen from '../screens/AccountScreen.js'
+import WalletScreen from '../screens/WalletScreen.js'
 import TransactionsScreen from '../screens/TransactionsScreen.js'
 import RecipientsScreen from '../screens/RecipientsScreen.js'
 import VoteScreen from '../screens/VoteScreen.js'
@@ -10,8 +10,8 @@ import SettingsScreen from '../screens/SettingsScreen.js'
 
 const MainNavigator = createBottomTabNavigator(
 {
-  Account: createStackNavigator(
-  { Root: AccountScreen },
+  Wallet: createStackNavigator(
+  { Root: WalletScreen },
   {
     initialRouteName: 'Root',
     navigationOptions:
@@ -65,26 +65,26 @@ const MainNavigator = createBottomTabNavigator(
   navigationOptions: ({ navigation }) => ({
     tabBarIcon: ({ focused, tintColor }) => {
       const { routeName } = navigation.state;
-      let iconName;
+      let iconElement;
       switch(routeName)
       {
-        case 'Account':
-          iconName = Icons.idCard;
+        case 'Wallet':
+          iconElement = (<Entypo name='wallet' color={tintColor} size={22} />);
           break;
         case 'Transactions':
-          iconName = Icons.exchange;
+          iconElement = (<FontAwesome name='exchange' color={tintColor} size={22} />);
           break;
         case 'Vote':
-          iconName = Icons.legal;
+          iconElement = (<FontAwesome name='legal' color={tintColor} size={22} />);
           break;
         case 'Recipients':
-          iconName = Icons.addressBook;
+          iconElement = (<FontAwesome name='address-book' color={tintColor} size={22} />);
           break;
         case 'Settings':
-          iconName = Icons.cogs;
+          iconElement = (<FontAwesome name='cogs' color={tintColor} size={22} />);
           break;
       }
-      return (<FontAwesome color={tintColor} style={{fontSize: 22}}>{iconName}</FontAwesome>);
+      return iconElement;
     }
   }),
   tabBarOptions: {

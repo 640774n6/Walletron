@@ -1,33 +1,39 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, View, Text, ScrollView } from 'react-native';
-import FontAwesome, { Icons } from 'react-native-fontawesome';
+import { StatusBar, SafeAreaView, View, Text } from 'react-native';
+import { List, ListItem } from 'react-native-elements'
+import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo';
 
 import TronLogoGraphic from '../graphics/TronLogoGraphic.js';
 
 const HeaderRight = (
   <View style={{ flex: 1, flexDirection: 'row' }}>
-    <FontAwesome color='#ffffff' style={{ fontSize: 24, marginRight: 15 }}>{Icons.send}</FontAwesome>
-    <FontAwesome color='#ffffff' style={{ fontSize: 24, marginRight: 15 }}>{Icons.qrcode}</FontAwesome>
+    <FontAwesome name='send' color='#ffffff' size={24} style={{ marginRight: 15 }}/>
+    <FontAwesome name='qrcode' color='#ffffff' size={24} style={{ marginRight: 15 }}/>
   </View>
 );
 
 const HeaderLeft = (
-  <FontAwesome color='#ffffff' style={{ fontSize: 24, marginLeft: 15 }}>{Icons.bars}</FontAwesome>
+  <FontAwesome name='bars' color='#ffffff' size={24} style={{ marginLeft: 15 }}/>
 );
 
-export default class AccountScreen extends React.Component
+const listData = [
+  { title: 'AwesomeCoin', icon: 'coin', iconType: 'material-community' },
+  { title: 'MegaCoin', icon: 'coin', iconType: 'material-community' }
+];
+
+export default class WalletScreen extends React.Component
 {
   static navigationOptions =
   {
-    title: 'Account',
+    title: 'Wallet',
     headerLeft: HeaderLeft,
     headerRight: HeaderRight
   };
   render()
   {
     return (
-      <SafeAreaView>
+      <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle='light-content'/>
         <LinearGradient colors={['#333333', '#111111']} style={{ alignItems: 'center' }}>
           <TronLogoGraphic style={{ marginTop: 5 }} strokeColor='#ca2b1e' strokeWidth='3' width='100' height='100' />
@@ -36,8 +42,17 @@ export default class AccountScreen extends React.Component
             <Text style={{ color: '#aaaaaa', fontSize: 16 }}>($632.50)</Text>
           </View>
         </LinearGradient>
-        <ScrollView>
-        </ScrollView>
+        <List containerStyle={{marginTop: 0}}>
+        {
+          listData.map((item, i) =>
+          (
+            <ListItem
+              key={i}
+              title={item.title}
+              leftIcon={{name: item.icon, type: item.iconType}}/>
+          ))
+        }
+        </List>
       </SafeAreaView>
     );
   }

@@ -1,6 +1,5 @@
 import React from 'react';
 import { StatusBar, SafeAreaView  } from 'react-native';
-import FontAwesome, { Icons } from 'react-native-fontawesome';
 
 export default class TransactionsScreen extends React.Component
 {
