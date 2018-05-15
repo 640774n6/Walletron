@@ -6,10 +6,8 @@ export default class TronLogoGraphic extends React.Component {
         let style = this.props.style;
         let strokeColor = this.props.strokeColor ? this.props.strokeColor : '#000000';
         let strokeWidth = this.props.strokeWidth ? this.props.strokeWidth : 5;
-        let width = this.props.width ? this.props.width : 100;
-        let height = this.props.height ? this.props.height : 100;
         return (
-            <Svg style={style} height={height} width={width} preserveAspectRatio="true" viewBox="0 0 232.6 267.5">
+            <Svg style={style} preserveAspectRatio="true" viewBox="0 0 232.6 267.5">
               <Svg.Line stroke={strokeColor} strokeWidth={strokeWidth} x1="3.7" y1="4.7" x2="115.3" y2="134"/>
               <Svg.Line stroke={strokeColor} strokeWidth={strokeWidth} x1="114.6" y1="134" x2="100.2" y2="267.5"/>
               <Svg.Line stroke={strokeColor} strokeWidth={strokeWidth * 1.4} x1="3.5" y1="3.5" x2="192" y2="48.7"/>
