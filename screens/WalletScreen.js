@@ -5,7 +5,7 @@ import { FontAwesome, Entypo, MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient, AppLoading } from 'expo';
 import { HttpClient } from '@tronprotocol/wallet-api';
 
-import TronLogoGraphic from '../graphics/TronLogoGraphic.js';
+import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
 
 const headerRight = (
   <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -140,7 +140,16 @@ export default class WalletScreen extends React.Component {
             right: 0,
           }}>
           <LinearGradient colors={ ['#333333', '#1b1b1b'] } style={{ flex: 1, alignItems: 'center' }}>
-            <TronLogoGraphic style={{ marginTop: 5, width: 110, height: 110, transform: [{ scale: largeHeaderContentValue }], opacity: largeHeaderContentValue }} strokeColor='#ca2b1e' strokeWidth='3'/>
+            <TronLogoLineGraphic
+              style={{
+                marginTop: 5,
+                width: 110,
+                height: 110,
+                transform: [{ scale: largeHeaderContentValue }],
+                opacity: largeHeaderContentValue
+              }}
+              strokeColor='#ca2b1e'
+              strokeWidth='3'/>
             <Animated.View style={{
               opacity: largeHeaderContentValue,
               alignItems: 'center',
@@ -165,7 +174,14 @@ export default class WalletScreen extends React.Component {
                 paddingLeft: 10,
                 paddingRight: 10
               }}>
-              <TronLogoGraphic style={{ width: 35, height: 35, marginRight: 10 }} strokeColor='#ca2b1e' strokeWidth='4'/>
+              <TronLogoLineGraphic
+                style={{
+                  width: 35,
+                  height: 35,
+                  marginRight: 10
+                }}
+                strokeColor='#ca2b1e'
+                strokeWidth='6'/>
               <View>
                 <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>{ this.state.balance } TRX</Text>
                 <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>(${ this.state.value })</Text>

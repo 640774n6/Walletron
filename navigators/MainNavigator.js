@@ -1,5 +1,6 @@
 import React from 'react';
 import { createStackNavigator, createBottomTabNavigator } from 'react-navigation';
+import { Platform, View } from 'react-native';
 import { FontAwesome, Entypo } from '@expo/vector-icons';
 
 import WalletScreen from '../screens/WalletScreen.js'
@@ -16,12 +17,15 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
+      headerTitleStyle: { flex: 1, textAlign: 'center' },
       headerStyle: {
         backgroundColor: '#333333',
         borderBottomWidth: 0,
         shadowOpacity: 0,
         elevation: 0
       },
+      headerLeft: (Platform.OS === 'android' && <View/>),
+      headerRight: (Platform.OS === 'android' && <View/>),
       headerTintColor: '#ffffff'
     }
   }),
@@ -31,12 +35,15 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
+      headerTitleStyle: { flex: 1, textAlign: 'center' },
       headerStyle: {
         backgroundColor: '#333333',
         borderBottomWidth: 0,
         shadowOpacity: 0,
         elevation: 0
       },
+      headerLeft: (Platform.OS === 'android' && <View/>),
+      headerRight: (Platform.OS === 'android' && <View/>),
       headerTintColor: '#ffffff'
     }
   }),
@@ -46,12 +53,15 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
+      headerTitleStyle: { flex: 1, textAlign: 'center' },
       headerStyle: {
         backgroundColor: '#333333',
         borderBottomWidth: 0,
         shadowOpacity: 0,
         elevation: 0
       },
+      headerLeft: (Platform.OS === 'android' && <View/>),
+      headerRight: (Platform.OS === 'android' && <View/>),
       headerTintColor: '#ffffff'
     }
   }),
@@ -61,12 +71,15 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
+      headerTitleStyle: { flex: 1, textAlign: 'center' },
       headerStyle: {
         backgroundColor: '#333333',
         borderBottomWidth: 0,
         shadowOpacity: 0,
         elevation: 0
       },
+      headerLeft: (Platform.OS === 'android' && <View/>),
+      headerRight: (Platform.OS === 'android' && <View/>),
       headerTintColor: '#ffffff'
     }
   }),
@@ -76,12 +89,15 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
+      headerTitleStyle: { flex: 1, textAlign: 'center' },
       headerStyle: {
         backgroundColor: '#333333',
         borderBottomWidth: 0,
         shadowOpacity: 0,
         elevation: 0
       },
+      headerLeft: (Platform.OS === 'android' && <View/>),
+      headerRight: (Platform.OS === 'android' && <View/>),
       headerTintColor: '#ffffff'
     }
   }),

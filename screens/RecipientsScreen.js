@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, ScrollView  } from 'react-native';
+import { StatusBar, SafeAreaView, ScrollView } from 'react-native';
 import { List, ListItem, SearchBar } from 'react-native-elements'
 import { FontAwesome } from '@expo/vector-icons';
 
