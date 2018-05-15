@@ -16,7 +16,12 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
-      headerStyle: { backgroundColor: '#333333', borderBottomWidth: 0 },
+      headerStyle: {
+        backgroundColor: '#333333',
+        borderBottomWidth: 0,
+        shadowOpacity: 0,
+        elevation: 0
+      },
       headerTintColor: '#ffffff'
     }
   }),
@@ -26,7 +31,12 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
-      headerStyle: { backgroundColor: '#333333', borderBottomWidth: 0 },
+      headerStyle: {
+        backgroundColor: '#333333',
+        borderBottomWidth: 0,
+        shadowOpacity: 0,
+        elevation: 0
+      },
       headerTintColor: '#ffffff'
     }
   }),
@@ -36,7 +46,12 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
-      headerStyle: { backgroundColor: '#333333', borderBottomWidth: 0 },
+      headerStyle: {
+        backgroundColor: '#333333',
+        borderBottomWidth: 0,
+        shadowOpacity: 0,
+        elevation: 0
+      },
       headerTintColor: '#ffffff'
     }
   }),
@@ -46,7 +61,12 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
-      headerStyle: { backgroundColor: '#333333', borderBottomWidth: 0 },
+      headerStyle: {
+        backgroundColor: '#333333',
+        borderBottomWidth: 0,
+        shadowOpacity: 0,
+        elevation: 0
+      },
       headerTintColor: '#ffffff'
     }
   }),
@@ -56,7 +76,12 @@ const MainNavigator = createBottomTabNavigator(
     initialRouteName: 'Root',
     navigationOptions:
     {
-      headerStyle: { backgroundColor: '#333333', borderBottomWidth: 0 },
+      headerStyle: {
+        backgroundColor: '#333333',
+        borderBottomWidth: 0,
+        shadowOpacity: 0,
+        elevation: 0
+      },
       headerTintColor: '#ffffff'
     }
   }),

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, ScrollView  } from 'react-native';
+import { StatusBar, SafeAreaView, ScrollView, Platform  } from 'react-native';
 import { List, ListItem } from 'react-native-elements';
 
 export default class SettingsScreen extends React.Component
@@ -29,8 +29,9 @@ export default class SettingsScreen extends React.Component
                 title={item.title}
                 hideChevron
                 switchButton
-                switchOnTintColor='#ca2b1e'
                 switched={item.value}
+                switchOnTintColor='#ca2b1e'
+                switchThumbTintColor={Platform.OS === 'android' ? '#ffffff' : null}
                 onSwitch={(value) =>
                 {
                   const newSettings = [...this.state.settings];

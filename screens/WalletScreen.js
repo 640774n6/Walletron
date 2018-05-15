@@ -83,13 +83,13 @@ export default class WalletScreen extends React.Component {
       extrapolate: 'clamp'
     });
 
-    const largeHeaderContentOpacity = this.scrollYAnimatedValue.interpolate({
+    const largeHeaderContentValue = this.scrollYAnimatedValue.interpolate({
       inputRange: [ 0, (HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT*2) ],
       outputRange: [ 1.0, 0.0 ],
       extrapolate: 'clamp'
     });
 
-    const smallHeaderContentOpacity = this.scrollYAnimatedValue.interpolate({
+    const smallHeaderContentValue = this.scrollYAnimatedValue.interpolate({
       inputRange: [ (HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT*2), ( HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT ) ],
       outputRange: [ 0.0, 1.0 ],
       extrapolate: 'clamp'
@@ -140,16 +140,20 @@ export default class WalletScreen extends React.Component {
             right: 0,
           }}>
           <LinearGradient colors={ ['#333333', '#1b1b1b'] } style={{ flex: 1, alignItems: 'center' }}>
-            <Animated.View style={{ flex: 1, alignItems: 'center', opacity: largeHeaderContentOpacity }}>
-              <TronLogoGraphic style={{ aspectRatio: 1.0, flex: 1, marginTop: 5 }} strokeColor='#ca2b1e' strokeWidth='3'/>
-              <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 30, marginLeft: 15, marginRight: 15 }}>
-                <Text style={{ color: '#ffffff', fontSize: 22 }}>{ this.state.balance } TRX</Text>
-                <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>(${ this.state.value })</Text>
-              </View>
+            <TronLogoGraphic style={{ marginTop: 5, width: 110, height: 110, transform: [{ scale: largeHeaderContentValue }], opacity: largeHeaderContentValue }} strokeColor='#ca2b1e' strokeWidth='3'/>
+            <Animated.View style={{
+              opacity: largeHeaderContentValue,
+              alignItems: 'center',
+              position: 'absolute',
+              bottom: 15,
+              left: 15,
+              right: 15}}>
+              <Text style={{ color: '#ffffff', fontSize: 22 }}>{ this.state.balance } TRX</Text>
+              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>(${ this.state.value })</Text>
             </Animated.View>
             <Animated.View
               style={{
-                opacity: smallHeaderContentOpacity,
+                opacity: smallHeaderContentValue,
                 height: HEADER_MIN_HEIGHT,
                 position: 'absolute',
                 bottom: 5,
