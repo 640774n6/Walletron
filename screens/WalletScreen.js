@@ -12,20 +12,20 @@ const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
 const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
 
-const headerRight = (
-  <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+const headerLeft = (
+  <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
     <TouchableOpacity>
       <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
     </TouchableOpacity>
     <TouchableOpacity>
-      <FontAwesome name='qrcode' color='#ffffff' size={24} style={{ marginRight: 15 }}/>
+      <FontAwesome name='qrcode' color='#ffffff' size={24}/>
     </TouchableOpacity>
   </View>
 );
 
-const headerLeft = (
+const headerRight = (
   <TouchableOpacity>
-    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
       <Blockie
         size={16}
         scale={1.5}
