@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "trxwallet",
-    "description": "This project is really great.",
-    "slug": "trxwallet",
+    "name": "Walletron",
+    "description": "Tron Crypto Wallet React-Native (Nodejs) Mobile Client",
+    "slug": "walletron",
     "privacy": "public",
     "sdkVersion": "27.0.0",
     "platforms": ["ios", "android"],
