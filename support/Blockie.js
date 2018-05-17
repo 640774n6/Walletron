@@ -95,8 +95,8 @@ class Blockie extends React.Component {
       return (
         <Svg.Rect
           key={i}
-          x={row * scale}
-          y={col * scale}
+          x={col * scale}
+          y={row * scale}
           width={scale}
           height={scale}
           fill={fill}
@@ -112,8 +112,7 @@ class Blockie extends React.Component {
     return (
       <Svg
         height={size * scale}
-        width={size * scale}
-      >
+        width={size * scale}>
         {this.renderIcon(size, scale)}
       </Svg>
     );

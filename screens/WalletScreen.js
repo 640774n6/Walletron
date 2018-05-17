@@ -87,6 +87,7 @@ export default class WalletScreen extends React.Component {
         titleStyle={{ color: '#000000', fontSize: 16 }}
         leftElement={<Blockie size={16} scale={2.0} seed={ item.name }/>}
         rightTitle={ item.balance.toString() }
+        rightTitleStyle={{ color: '#000000', fontSize: 18 }}
         hideChevron
         containerStyle={{
           borderRadius: 8,
@@ -128,26 +129,30 @@ export default class WalletScreen extends React.Component {
           onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10, marginTop: 10, marginRight: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialCommunityIcons name='coins' size={28} color='#333333'/>
+              <MaterialCommunityIcons name='coins' size={22} color='#333333'/>
               <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Tokens</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <MaterialCommunityIcons
+            <Entypo
               style={{ marginRight: 10 }}
-              name='swap-horizontal'
+              name='dots-three-horizontal'
               size={28}
-              color='#0f7acc'/>
-              <MaterialCommunityIcons
-                name='plus-circle-multiple-outline'
-                size={28}
-                color='#1aaa55'/>
-            </View>
+              color='#333333'/>
           </View>
           <FlatList
-            style={{ marginBottom: 10 }}
             keyExtractor={(item, index) => item + index}
             renderItem={ this.renderTokenListItem }
             data={ this.state.tokens }/>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10, marginTop: 10, marginRight: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <FontAwesome name='snowflake-o' size={22} color='#333333'/>
+              <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Freezer</Text>
+            </View>
+            <Entypo
+              style={{ marginRight: 10 }}
+              name='dots-three-horizontal'
+              size={28}
+              color='#333333'/>
+          </View>
         </ScrollView>
         <Animated.View
           style={{
