@@ -6,7 +6,7 @@ import { LinearGradient, AppLoading } from 'expo';
 import { HttpClient } from '@tronprotocol/wallet-api';
 
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
-import Blockie from '../support/Blockie.js';
+import Blockie from '../libs/blockie.js';
 
 const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
