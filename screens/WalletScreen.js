@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, View, Text, ScrollView, Animated, FlatList } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, View, Text, ScrollView, Animated, FlatList } from 'react-native';
 import { ListItem, Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient, AppLoading } from 'expo';
@@ -8,19 +8,37 @@ import { HttpClient } from '@tronprotocol/wallet-api';
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
 import Blockie from '../support/Blockie.js';
 
+const HEADER_MIN_HEIGHT = 50;
+const HEADER_MAX_HEIGHT = 200;
+const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
+
 const headerRight = (
-  <View style={{ flex: 1, flexDirection: 'row' }}>
-    <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
-    <FontAwesome name='qrcode' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
+  <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+    <TouchableOpacity>
+      <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
+    </TouchableOpacity>
+    <TouchableOpacity>
+      <FontAwesome name='qrcode' color='#ffffff' size={24} style={{ marginRight: 15 }}/>
+    </TouchableOpacity>
   </View>
 );
 
 const headerLeft = (
-  <FontAwesome name='bars' color='#ffffff' size={20} style={{ marginLeft: 15 }}/>
+  <TouchableOpacity>
+    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+      <Blockie
+        size={16}
+        scale={1.5}
+        seed={TEST_WALLET_ADDRESS}
+        containerStyle={{
+          overflow: 'hidden',
+          marginLeft: 15,
+          borderRadius: 3,
+      }}/>
+      <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
+    </View>
+  </TouchableOpacity>
 );
-
-const HEADER_MIN_HEIGHT = 50;
-const HEADER_MAX_HEIGHT = 200;
 
 export default class WalletScreen extends React.Component {
   static navigationOptions = {
@@ -48,7 +66,7 @@ export default class WalletScreen extends React.Component {
     const tronClient = new HttpClient();
     const cryptoCompare = require('cryptocompare');
 
-    var accountBalances = await tronClient.getAccountBalances('27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW');
+    var accountBalances = await tronClient.getAccountBalances(TEST_WALLET_ADDRESS);
     var priceData = await cryptoCompare.price('TRX', 'CAD');
 
     var trxBalance = parseFloat(accountBalances.balances[0].balance).toFixed(3);
@@ -58,7 +76,7 @@ export default class WalletScreen extends React.Component {
     var tokens = accountBalances.balances.map(b => {
       return {
         name: b.name,
-        balance: parseInt(b.balance)
+        balance: parseFloat(b.balance).toFixed(3)
       };
     });
 
@@ -79,22 +97,31 @@ export default class WalletScreen extends React.Component {
     this.reloadData();
   }
 
-  renderTokenListItem = ({ item, i }) => {
+  scrollToTop()
+  {
+    this.scrollView.scrollTo({ y: 0, animated: true });
+  }
+
+  renderTokenListItem = ({ item, index }) => {
     return (
       <ListItem
-        key={ i }
+        key={ index }
         title={ item.name }
         titleStyle={{ color: '#000000', fontSize: 16 }}
-        leftElement={<Blockie size={16} scale={2.0} seed={ item.name }/>}
-        rightTitle={ item.balance.toString() }
+        leftElement={<Blockie containerStyle={{ borderRadius: 5, overflow: 'hidden' }} size={16} scale={2.0} seed={ item.name }/>}
+        rightTitle={ item.balance }
         rightTitleStyle={{ color: '#000000', fontSize: 18 }}
         hideChevron
         containerStyle={{
-          borderRadius: 8,
-          margin: 10,
-          marginBottom: 0,
-          borderBottomWidth: 0,
-          backgroundColor: '#ffffff'
+          borderTopLeftRadius: index === 0 ? 8 : null,
+          borderTopRightRadius: index === 0 ? 8 : null,
+          borderBottomLeftRadius: index === this.state.tokens.length - 1 ? 8 : null,
+          borderBottomRightRadius: index === this.state.tokens.length - 1 ? 8 : null,
+          backgroundColor: '#ffffff',
+          borderBottomColor: index != this.state.tokens.length - 1 ? '#dfdfdf' : null,
+          borderBottomWidth: index != this.state.tokens.length - 1 ? 1 : null,
+          marginLeft: 10,
+          marginRight: 10
         }}/>
     );
   }
@@ -122,12 +149,13 @@ export default class WalletScreen extends React.Component {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#dfdfdf' }}>
         <StatusBar barStyle='light-content'/>
         <ScrollView
+          ref={ ref => this.scrollView = ref }
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingTop: HEADER_MAX_HEIGHT }}
           scrollIndicatorInsets={{ top: HEADER_MAX_HEIGHT }}
           scrollEventThrottle={ 16 }
           onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10, marginTop: 10, marginRight: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <MaterialCommunityIcons name='coins' size={22} color='#333333'/>
               <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Tokens</Text>
@@ -142,7 +170,7 @@ export default class WalletScreen extends React.Component {
             keyExtractor={(item, index) => item + index}
             renderItem={ this.renderTokenListItem }
             data={ this.state.tokens }/>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10, marginTop: 10, marginRight: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <FontAwesome name='snowflake-o' size={22} color='#333333'/>
               <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Freezer</Text>
@@ -161,9 +189,14 @@ export default class WalletScreen extends React.Component {
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
+            right: 0
           }}>
-          <LinearGradient colors={ ['#333333', '#1b1b1b'] } style={{ flex: 1, alignItems: 'center' }}>
+          <LinearGradient
+            colors={ ['#333333', '#1b1b1b'] }
+            style={{
+              flex: 1,
+              alignItems: 'center'
+            }}>
             <TronLogoLineGraphic
               style={{
                 marginTop: 5,
@@ -193,24 +226,27 @@ export default class WalletScreen extends React.Component {
                 left: 0,
                 right: 0,
                 flex: 1,
-                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 paddingLeft: 10,
                 paddingRight: 10
               }}>
-              <TronLogoLineGraphic
-                style={{
-                  width: 35,
-                  height: 35,
-                  marginRight: 10
-                }}
-                strokeColor='#ca2b1e'
-                strokeWidth='6'/>
-              <View>
-                <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>{ this.state.balance } TRX</Text>
-                <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>(${ this.state.value })</Text>
-              </View>
+              <TouchableOpacity onPress={ this.scrollToTop.bind(this) }>
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                  <TronLogoLineGraphic
+                    style={{
+                      width: 35,
+                      height: 35,
+                      marginRight: 10
+                    }}
+                    strokeColor='#ca2b1e'
+                    strokeWidth='6'/>
+                  <View>
+                    <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>{ this.state.balance } TRX</Text>
+                    <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>(${ this.state.value })</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
             </Animated.View>
           </LinearGradient>
         </Animated.View>

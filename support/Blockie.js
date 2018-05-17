@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Svg } from 'expo';
 
 const randseed = new Array(4);
@@ -110,11 +111,13 @@ class Blockie extends React.Component {
     const scale = this.props.scale || 8;
 
     return (
-      <Svg
-        height={size * scale}
-        width={size * scale}>
-        {this.renderIcon(size, scale)}
-      </Svg>
+      <View style={this.props.containerStyle}>
+        <Svg
+          height={size * scale}
+          width={size * scale}>
+          {this.renderIcon(size, scale)}
+        </Svg>
+      </View>
     );
   }
 }
