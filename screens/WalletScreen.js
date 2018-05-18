@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, View, Text, ScrollView, Animated, FlatList } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, View, Text, ScrollView, Animated, FlatList, NativeModules } from 'react-native';
 import { ListItem, Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient, AppLoading } from 'expo';
@@ -52,10 +52,9 @@ export default class WalletScreen extends React.Component {
     super();
 
     this.state = {
-      balance: '0.000',
-      value: '0.00',
+      balance: 0.0,
+      value: 0.0,
       tokens: [],
-      frozen: [],
       loaded: false
     }
 
@@ -63,28 +62,18 @@ export default class WalletScreen extends React.Component {
   }
 
   async reloadData() {
-    const tronClient = new HttpClient();
     const cryptoCompare = require('cryptocompare');
-
-    var accountBalances = await tronClient.getAccountBalances(TEST_WALLET_ADDRESS);
     var priceData = await cryptoCompare.price('TRX', 'CAD');
+    var trxValue = parseFloat(priceData['CAD']);
 
-    var trxBalance = parseFloat(accountBalances.balances[0].balance).toFixed(3);
-    var trxValue = parseFloat(trxBalance * priceData['CAD']).toFixed(2);
-
-    accountBalances.balances.shift();
-    var tokens = accountBalances.balances.map(b => {
-      return {
-        name: b.name,
-        balance: parseFloat(b.balance).toFixed(3)
-      };
-    });
+    const tronClient = NativeModules.TronClient;
+    var account = await tronClient.getAccount(TEST_WALLET_ADDRESS);
+    var trxBalance = parseFloat(account.balance);
 
     this.setState({
       balance: trxBalance,
       value: trxValue,
-      tokens: tokens,
-      frozen: accountBalances.frozen.balances,
+      tokens: account.assets,
       loaded: true });
   }
 
@@ -109,7 +98,7 @@ export default class WalletScreen extends React.Component {
         title={ item.name }
         titleStyle={{ color: '#000000', fontSize: 16 }}
         leftElement={<Blockie containerStyle={{ borderRadius: 5, overflow: 'hidden' }} size={16} scale={2.0} seed={ item.name }/>}
-        rightTitle={ item.balance }
+        rightTitle={ item.balance.toString() }
         rightTitleStyle={{ color: '#000000', fontSize: 18 }}
         hideChevron
         containerStyle={{
@@ -214,8 +203,8 @@ export default class WalletScreen extends React.Component {
               bottom: 15,
               left: 15,
               right: 15}}>
-              <Text style={{ color: '#ffffff', fontSize: 22 }}>{ this.state.balance } TRX</Text>
-              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>(${ this.state.value })</Text>
+              <Text style={{ color: '#ffffff', fontSize: 22 }}>{ this.state.balance.toFixed(3) } TRX</Text>
+              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>(${ (this.state.balance * this.state.value).toFixed(2) })</Text>
             </Animated.View>
             <Animated.View
               style={{
@@ -242,8 +231,8 @@ export default class WalletScreen extends React.Component {
                     strokeColor='#ca2b1e'
                     strokeWidth='6'/>
                   <View>
-                    <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>{ this.state.balance } TRX</Text>
-                    <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>(${ this.state.value })</Text>
+                    <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>{ this.state.balance.toFixed(3) } TRX</Text>
+                    <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>(${ (this.state.balance * this.state.value).toFixed(2) })</Text>
                   </View>
                 </View>
               </TouchableOpacity>
