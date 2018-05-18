@@ -3,7 +3,6 @@ import { StatusBar, SafeAreaView, TouchableOpacity, View, Text, ScrollView, Anim
 import { ListItem, Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient, AppLoading } from 'expo';
-import { HttpClient } from '@tronprotocol/wallet-api';
 
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
 import Blockie from '../libs/blockie.js';

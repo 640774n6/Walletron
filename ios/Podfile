@@ -46,8 +46,6 @@ target 'walletron' do
     :inhibit_warnings => true
   pod 'TronProtocol', :path => '.'
 
-  pod "NSData+FastHex"
-
   pod "OpenSSL"
 
   pod "libbase58"

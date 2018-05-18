@@ -1,4 +1,3 @@
-
 package com.bholland.tronclient;
 
 import android.content.Context;
@@ -7,6 +6,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 
 public class TronClientModule extends ReactContextBaseJavaModule {
 
@@ -22,8 +22,8 @@ public class TronClientModule extends ReactContextBaseJavaModule {
         return "TronClient";
     }
 
-    @ReactMethod test(String input, Promise promise) {
-      String output = "Hello, " + input;
-      promise.resolve(output);
+    @ReactMethod 
+    public void getAccount(String accountAddress, Promise promise) {
+      promise.resolve(null);
     }
 }

@@ -35,7 +35,7 @@ RCT_EXPORT_MODULE();
 { return NO; }
 
 RCT_REMAP_METHOD(getAccount,
-                 input:(NSString *)accountAddress
+                 accountAddress:(NSString *)accountAddress
                  getAccountBalanceWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {

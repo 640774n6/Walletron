@@ -3,3 +3,15 @@ ios/Pods/**/*
 .expo/*
 npm-debug.*
 .DS_Store
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+.gradle/
+build/
+local.properties
+xcuserdata/
+xcuserdata/*
