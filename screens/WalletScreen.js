@@ -2,7 +2,7 @@ import React from 'react';
 import { StatusBar, SafeAreaView, TouchableOpacity, View, Text, ScrollView, Animated, FlatList, NativeModules } from 'react-native';
 import { ListItem, Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient, AppLoading } from 'expo';
+import { LinearGradient } from 'expo';
 
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
 import Blockie from '../libs/blockie.js';

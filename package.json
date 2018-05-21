@@ -10,6 +10,7 @@
     "react-native-modal-dropdown": "^0.6.2",
     "react-native-progress": "^3.4.0",
     "react-native-qrcode": "^0.2.6",
+    "react-native-step-indicator": "0.0.8",
     "react-navigation": "^2.0.0"
   }
 }
