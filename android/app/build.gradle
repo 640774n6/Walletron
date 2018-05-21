@@ -1,21 +1,44 @@
-buildscript {
-  repositories {
-    maven { url 'https://maven.fabric.io/public' }
-  }
-
-  dependencies {
-    classpath 'io.fabric.tools:gradle:1.+'
-  }
-}
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.protobuf'
 apply plugin: 'io.fabric'
 apply plugin: 'com.neenbedankt.android-apt'
 
 repositories {
   maven { url 'https://maven.fabric.io/public' }
+  mavenCentral()
+}
+
+buildscript {
+  repositories {
+    maven { url 'https://maven.fabric.io/public' }
+    mavenCentral()
+  }
+
+  ext {
+    grpcVersion = '1.6.1'
+    protobufVersion = '3.3.0'
+    protobufGradlePluginVersion = '0.8.0'
+  }
+
+  dependencies {
+    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.5'
+    classpath 'io.fabric.tools:gradle:1.+'
+  }
 }
 
 android {
+  sourceSets {
+      main {
+          proto {
+              srcDir '../../protos'
+          }
+          java {
+              srcDir 'src/main/gen'
+              srcDir 'src/main/java'
+          }
+      }
+  }
+
   compileSdkVersion 26
   buildToolsVersion '26.0.1'
 
@@ -158,13 +181,44 @@ dependencies {
   androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.1'
   androidTestCompile 'com.azimolabs.conditionwatcher:conditionwatcher:0.2'
 
+  compile group: 'io.grpc', name: 'grpc-netty', version: '1.9.0'
+  compile group: 'io.grpc', name: 'grpc-protobuf', version: '1.9.0'
+  compile group: 'io.grpc', name: 'grpc-stub', version: '1.9.0'
+  compile group: 'com.googlecode.protobuf-java-format', name: 'protobuf-java-format', version: '1.4'
+  compile group: 'com.google.api.grpc', name: 'googleapis-common-protos', version: '0.0.3'
 
-  
+  compile "com.madgag.spongycastle:core:1.53.0.0"
+  compile "com.madgag.spongycastle:prov:1.53.0.0"
+
   compile('host.exp.exponent:expoview:27.0.0@aar') {
     transitive = true
   }
-  
-  
+}
+
+protobuf {
+    generatedFilesBaseDir = "$projectDir/src/"
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.5.1-1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.9.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    outputSubDir = "gen"
+                }
+            }
+        }
+        all()*.plugins {
+            grpc {
+                outputSubDir = "gen"
+            }
+        }
+    }
 }
 
 // This has to be down here for some reason

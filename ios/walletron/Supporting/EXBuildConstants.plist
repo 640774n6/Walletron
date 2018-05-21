@@ -14,6 +14,6 @@
 	<key>STANDALONE_CONTEXT_TYPE</key>
 	<string>user</string>
 	<key>developmentUrl</key>
-	<string>wtron://192.168.1.103:19000</string>
+	<string>wtron://192.168.1.104:19000</string>
 </dict>
 </plist>
