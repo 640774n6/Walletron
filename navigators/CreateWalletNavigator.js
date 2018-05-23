@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from 'react-navigation';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import CreateWalletScreen from '../screens/CreateWalletScreen.js'
 

@@ -58,7 +58,7 @@ export default class StartScreen extends React.Component
             <ScrollView
               contentContainerStyle={{ flex: 1, justifyContent: 'center' }}
               scrollEventThrottle={ 16 }
-              onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>>
+              onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
               <View style={{ marginLeft: 50, marginRight: 50 }}>
                 <TouchableOpacity onPress={ this.onCreateWalletPressed.bind(this) }>
                   <View style={{

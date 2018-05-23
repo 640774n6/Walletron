@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, Text, NativeModules } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, Text, ScrollView, NativeModules } from 'react-native';
 import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
@@ -37,6 +37,8 @@ export default class CreateWalletScreen extends React.Component
     return (
       <SafeAreaView>
         <StatusBar barStyle='light-content'/>
+        <ScrollView>
+        </ScrollView>
       </SafeAreaView>
     );
   }
