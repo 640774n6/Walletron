@@ -117,7 +117,7 @@ RCT_REMAP_METHOD(getAccount,
             resolve(returnAccount);
         }
         else
-        { reject(@"no_response", @"No response from host", error); }
+        { reject(@"Failed to get account", @"No response from host", error); }
     }];
 }
 

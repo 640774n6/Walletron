@@ -6,6 +6,7 @@ apply plugin: 'com.neenbedankt.android-apt'
 repositories {
   maven { url 'https://maven.fabric.io/public' }
   mavenCentral()
+  jcenter()
 }
 
 buildscript {
@@ -116,7 +117,6 @@ android {
 
 apply from: 'expo.gradle'
 
-
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -187,8 +187,9 @@ dependencies {
   compile group: 'com.googlecode.protobuf-java-format', name: 'protobuf-java-format', version: '1.4'
   compile group: 'com.google.api.grpc', name: 'googleapis-common-protos', version: '0.0.3'
 
-  compile "com.madgag.spongycastle:core:1.53.0.0"
-  compile "com.madgag.spongycastle:prov:1.53.0.0"
+  compile "com.madgag.spongycastle:core:1.58.0.0"
+  compile "com.madgag.spongycastle:prov:1.58.0.0"
+  compile "io.github.novacrypto:BIP39:0.1.9"
 
   compile('host.exp.exponent:expoview:27.0.0@aar') {
     transitive = true

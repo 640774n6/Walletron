@@ -12,7 +12,7 @@
 #import <NSData+FastHex/NSData+FastHex.h>
 #import "Categories/NSString+Base58.h"
 
-size_t const kTronCryptMnemonicStrength = 256;
+size_t const kTronCryptMnemonicStrength = 128;
 size_t const kTronCryptSeedSize = 64;
 size_t const kTronCryptPublicKeyHashSize = 20;
 size_t const kTronCryptPrivateKeyLength = 32;
