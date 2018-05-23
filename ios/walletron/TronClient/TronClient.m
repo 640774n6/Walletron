@@ -6,6 +6,7 @@
 #import <RxLibrary/GRXWriter+Transformations.h>
 
 #import "Categories/NSString+Base58.h"
+#import "TronCrypt.h"
 
 static NSString * const kHostAddress = @"47.254.16.55:50051";
 static int const kTrxDrop = 1000000;
@@ -26,6 +27,59 @@ RCT_EXPORT_MODULE();
 
 + (BOOL) requiresMainQueueSetup
 { return NO; }
+
+RCT_REMAP_METHOD(generateAccount,
+                 password:(NSString *)password
+                 generateAccountWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    //Generate new tron crypt then verify it is valid
+    TronCrypt *tronCrypt = [TronCrypt generatedCryptWithSecret: password];
+    if(!tronCrypt.valid)
+    {
+        //Crypt is invalid, reject and return
+        reject(@"Failed to restore account", @"Mnemonics invalid", nil);
+        return;
+    }
+    
+    //Create generated account dictionary
+    NSDictionary *returnGeneratedAccount =
+    @{
+        @"address": tronCrypt.address,
+        @"privateKey": tronCrypt.privateKey,
+        @"mnemonics": tronCrypt.mnemonics
+    };
+    
+    //Return the generated account dictionary
+    resolve(returnGeneratedAccount);
+}
+
+RCT_REMAP_METHOD(restoreAccount,
+                 mnemonics: (NSString *) mnemonics
+                 password:(NSString *)password
+                 restoreAccountWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    //Create tron crypt for mnemonics & password, then verify it is valid
+    TronCrypt *tronCrypt = [TronCrypt cryptWithMnemonics: mnemonics secret: password];
+    if(!tronCrypt.valid)
+    {
+        //Crypt is invalid, reject and return
+        reject(@"Failed to restore account", @"Mnemonics invalid", nil);
+        return;
+    }
+    
+    //Create restored account dictionary
+    NSDictionary *returnRestoredAccount =
+    @{
+        @"address": tronCrypt.address,
+        @"privateKey": tronCrypt.privateKey,
+        @"mnemonics": tronCrypt.mnemonics
+    };
+    
+    //Return the restored account dictionary
+    resolve(returnRestoredAccount);
+}
 
 RCT_REMAP_METHOD(getAccount,
                  accountAddress:(NSString *)accountAddress

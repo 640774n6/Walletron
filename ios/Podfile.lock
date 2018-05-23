@@ -190,6 +190,7 @@ PODS:
     - React/Core
     - React/fishhook
     - React/RCTBlob
+  - TrezorCrypto (0.0.5)
   - TronProtocol (1.0.0):
     - "!ProtoCompiler-gRPCPlugin (~> 1.0)"
     - TronProtocol/Messages (= 1.0.0)
@@ -226,6 +227,7 @@ DEPENDENCIES:
   - React/RCTText (from `../node_modules/react-native`)
   - React/RCTVibration (from `../node_modules/react-native`)
   - React/RCTWebSocket (from `../node_modules/react-native`)
+  - TrezorCrypto
   - TronProtocol (from `.`)
   - yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -268,6 +270,7 @@ SPEC REPOS:
     - "NSData+FastHex"
     - OpenSSL
     - Protobuf
+    - TrezorCrypto
 
 EXTERNAL SOURCES:
   DoubleConversion:
@@ -334,9 +337,10 @@ SPEC CHECKSUMS:
   OpenSSL: 246ffb948e9d56466727fd318134af35f5aa764e
   Protobuf: 8a9838fba8dae3389230e1b7f8c104aa32389c03
   React: 977e1cdf18a3047a35d321b34ffb678d79d19076
+  TrezorCrypto: ecef681446bf02af6248d3b5e394026d7e766e56
   TronProtocol: 20d6c3930d4ab84c7beef821f7b67af2df128d2b
   yoga: a23273df0088bf7f2bb7e5d7b00044ea57a2a54a
 
-PODFILE CHECKSUM: fe063ac3694dfc08883d8d8ddeb62d161737b38d
+PODFILE CHECKSUM: 1b2e2fb6605ca5d0ac9081a9f278827ab7bfea04
 
 COCOAPODS: 1.5.2

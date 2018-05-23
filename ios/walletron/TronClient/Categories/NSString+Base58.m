@@ -11,7 +11,7 @@
 #import <libbase58/libbase58.h>
 #import <OpenSSL/openssl/sha.h>
 
-size_t const kSha256Length = 32;
+size_t const kBase58Sha256Length = 32;
 size_t const kBase58EncodedLength = 36;
 size_t const kBase58DecodedLength = 25;
 size_t const kBase58HashLength = 4;
@@ -32,10 +32,10 @@ static bool openssl_sha256(void *digest, const void *data, size_t datasz)
     { b58_sha256_impl = openssl_sha256; }
     
     //Hash the data, then hash that hash
-    uint8_t hash0[kSha256Length];
-    uint8_t hash1[kSha256Length];
+    uint8_t hash0[kBase58Sha256Length];
+    uint8_t hash1[kBase58Sha256Length];
     openssl_sha256(hash0, data.bytes, data.length);
-    openssl_sha256(hash1, hash0, kSha256Length);
+    openssl_sha256(hash1, hash0, kBase58Sha256Length);
     
     //Append the hash to the end of the data
     uint8_t addr_data[kBase58DecodedLength];

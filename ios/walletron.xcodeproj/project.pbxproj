@@ -18,6 +18,7 @@
 		B5CFBF4F1EDE419400B4BE24 /* EXBuildConstants.plist in Resources */ = {isa = PBXBuildFile; fileRef = B5CFBF4E1EDE419400B4BE24 /* EXBuildConstants.plist */; };
 		B5DB04801F3A684600E91581 /* shell-app-manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B5DB047E1F3A684600E91581 /* shell-app-manifest.json */; };
 		B5DB04811F3A684600E91581 /* shell-app.bundle in Resources */ = {isa = PBXBuildFile; fileRef = B5DB047F1F3A684600E91581 /* shell-app.bundle */; };
+		B70B83DF20B524DA00598F71 /* TronCrypt.m in Sources */ = {isa = PBXBuildFile; fileRef = B70B83DE20B524DA00598F71 /* TronCrypt.m */; };
 		B797DA2920B26A790038863E /* NSString+Base58.m in Sources */ = {isa = PBXBuildFile; fileRef = B797DA2820B26A790038863E /* NSString+Base58.m */; };
 		B7CA527220AED3240089FD06 /* TronClient.m in Sources */ = {isa = PBXBuildFile; fileRef = B7CA527120AED3240089FD06 /* TronClient.m */; };
 		EBB8117C1BFA0514F79CAF74 /* libPods-walletron.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4A88D15726AD99E8A257BC7 /* libPods-walletron.a */; };
@@ -40,6 +41,8 @@
 		B5CFBF4E1EDE419400B4BE24 /* EXBuildConstants.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EXBuildConstants.plist; sourceTree = "<group>"; };
 		B5DB047E1F3A684600E91581 /* shell-app-manifest.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "shell-app-manifest.json"; sourceTree = "<group>"; };
 		B5DB047F1F3A684600E91581 /* shell-app.bundle */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "shell-app.bundle"; sourceTree = "<group>"; };
+		B70B83DD20B524DA00598F71 /* TronCrypt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TronCrypt.h; sourceTree = "<group>"; };
+		B70B83DE20B524DA00598F71 /* TronCrypt.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TronCrypt.m; sourceTree = "<group>"; };
 		B797DA2720B26A790038863E /* NSString+Base58.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString+Base58.h"; sourceTree = "<group>"; };
 		B797DA2820B26A790038863E /* NSString+Base58.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSString+Base58.m"; sourceTree = "<group>"; };
 		B7CA527020AED3240089FD06 /* TronClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TronClient.h; sourceTree = "<group>"; };
@@ -135,6 +138,8 @@
 			isa = PBXGroup;
 			children = (
 				B797DA2620B26A2C0038863E /* Categories */,
+				B70B83DD20B524DA00598F71 /* TronCrypt.h */,
+				B70B83DE20B524DA00598F71 /* TronCrypt.m */,
 				B7CA527020AED3240089FD06 /* TronClient.h */,
 				B7CA527120AED3240089FD06 /* TronClient.m */,
 			);
@@ -328,6 +333,7 @@
 				B7CA527220AED3240089FD06 /* TronClient.m in Sources */,
 				B56386611DB96A5E00A0598C /* main.m in Sources */,
 				B56386491DB9693800A0598C /* AppDelegate.m in Sources */,
+				B70B83DF20B524DA00598F71 /* TronCrypt.m in Sources */,
 				B797DA2920B26A790038863E /* NSString+Base58.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -47,7 +47,8 @@ target 'walletron' do
   pod 'TronProtocol', :path => '.'
 
   pod "OpenSSL"
-
+  pod "TrezorCrypto"
+  pod "NSData+FastHex"
   pod "libbase58"
 
   post_install do |installer|

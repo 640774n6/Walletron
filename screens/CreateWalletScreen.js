@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, Text } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, Text, NativeModules } from 'react-native';
 import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
@@ -15,6 +15,22 @@ export default class CreateWalletScreen extends React.Component
       )
     };
   };
+
+  async componentDidMount()
+  {
+    var tronClient = NativeModules.TronClient;
+    var account = await tronClient.generateAccount('Boost4g63T!');
+    console.log('GENERATED ACCOUNT:');
+    console.log(account.address);
+    console.log(account.privateKey);
+    console.log(account.mnemonics);
+
+    var restoredAccount = await tronClient.restoreAccount(account.mnemonics, 'Boost4g63T!');
+    console.log('RESTORED ACCOUNT:');
+    console.log(restoredAccount.address);
+    console.log(restoredAccount.privateKey);
+    console.log(restoredAccount.mnemonics);
+  }
 
   render()
   {
