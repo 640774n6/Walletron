@@ -16,7 +16,7 @@ export default class CreateWalletScreen extends React.Component
     };
   };
 
-  async componentDidMount()
+  async reloadData()
   {
     var tronClient = NativeModules.TronClient;
     var account = await tronClient.generateAccount('Boost4g63T!');
@@ -43,6 +43,11 @@ export default class CreateWalletScreen extends React.Component
     console.log('balance: ' + account.balance);
     account.assets.forEach((asset) =>
     { console.log(asset.name + ': ' + asset.balance); });
+  }
+
+  async componentDidMount()
+  {
+    this.reloadData();
   }
 
   render()
