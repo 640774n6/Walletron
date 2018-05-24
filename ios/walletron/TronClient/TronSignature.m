@@ -1,23 +1,25 @@
 //
-//  TronCrypt.m
+//  TronSignature.m
 //  walletron
 //
 //  Created by Brandon Holland on 2018-05-22.
 //  Copyright © 2018 650 Industries, Inc. All rights reserved.
 //
 
-#import "TronCrypt.h"
+#import "TronSignature.h"
 
 #import <TrezorCrypto/TrezorCrypto.h>
 #import <NSData+FastHex/NSData+FastHex.h>
 #import "Categories/NSString+Base58.h"
 
-size_t const kTronCryptMnemonicStrength = 128;
-size_t const kTronCryptSeedSize = 64;
-size_t const kTronCryptPublicKeyHashSize = 20;
-size_t const kTronCryptPrivateKeyLength = 32;
+size_t const kTronSignatureMnemonicStrength = 128;
+size_t const kTronSignatureSeedSize = 64;
+size_t const kTronSignaturePublicKeyHashSize = 20;
+size_t const kTronSignaturePrivateKeyLength = 32;
+size_t const kTronSignatureHashLength = 32;
+size_t const kTronSignatureDataSignatureLength = 65;
 
-@implementation TronCrypt
+@implementation TronSignature
 
 #pragma mark -
 #pragma mark Class Methods
@@ -25,19 +27,19 @@ size_t const kTronCryptPrivateKeyLength = 32;
 
 + (NSString *) generateNewMnemonics
 {
-    const char *mnemonics = mnemonic_generate(kTronCryptMnemonicStrength);
+    const char *mnemonics = mnemonic_generate(kTronSignatureMnemonicStrength);
     return [NSString stringWithCString: mnemonics encoding: NSUTF8StringEncoding];
 }
 
-+ (id) cryptWithMnemonics: (NSString *) mnemonics
-                   secret: (NSString *) secret
-{ return [[TronCrypt alloc] initWithMnemonics: mnemonics secret: secret]; }
++ (id) signatureWithMnemonics: (NSString *) mnemonics
+                       secret: (NSString *) secret
+{ return [[TronSignature alloc] initWithMnemonics: mnemonics secret: secret]; }
 
-+ (id) cryptWithPrivateKey: (NSString *) privateKey
-{ return [[TronCrypt alloc] initWithPrivateKey: privateKey]; }
++ (id) signatureWithPrivateKey: (NSString *) privateKey
+{ return [[TronSignature alloc] initWithPrivateKey: privateKey]; }
 
-+ (id) generatedCryptWithSecret: (NSString *) secret
-{ return [[TronCrypt alloc] initWithMnemonics: [TronCrypt generateNewMnemonics] secret: secret]; }
++ (id) generatedSignatureWithSecret: (NSString *) secret
+{ return [[TronSignature alloc] initWithMnemonics: [TronSignature generateNewMnemonics] secret: secret]; }
 
 #pragma mark -
 #pragma mark Creation + Destruction
@@ -92,7 +94,7 @@ size_t const kTronCryptPrivateKeyLength = 32;
     //Verify mnemonics is not null
     if(!_mnemonics)
     {
-        //Invalidate crypt and return
+        //Invalidate signature and return
         _valid = NO;
         return;
     }
@@ -101,21 +103,21 @@ size_t const kTronCryptPrivateKeyLength = 32;
     const char *words = [_mnemonics cStringUsingEncoding: NSUTF8StringEncoding];
     if(!mnemonic_check(words))
     {
-        //Invalidate crypt and return
+        //Invalidate signature and return
         _valid = NO;
         return;
     }
     
     //Declare variables
     HDNode node;
-    uint8_t seed[kTronCryptSeedSize];
-    uint8_t publicKeyHash[kTronCryptPublicKeyHashSize];
-    uint8_t addr[kTronCryptPublicKeyHashSize + 1];
+    uint8_t seed[kTronSignatureSeedSize];
+    uint8_t publicKeyHash[kTronSignaturePublicKeyHashSize];
+    uint8_t addr[kTronSignaturePublicKeyHashSize + 1];
     const char *scrt = _secret ? [_secret cStringUsingEncoding: NSUTF8StringEncoding] : "";
     
     //Generate seed from mnemonics and populate keys
-    mnemonic_to_seed(words, scrt, seed, nil);
-    hdnode_from_seed(seed, kTronCryptSeedSize, SECP256K1_NAME, &node);
+    mnemonic_to_seed(words, scrt, seed, NULL);
+    hdnode_from_seed(seed, kTronSignatureSeedSize, SECP256K1_NAME, &node);
     hdnode_private_ckd_prime(&node, 44);
     hdnode_private_ckd_prime(&node, 0);
     hdnode_private_ckd_prime(&node, 0);
@@ -125,22 +127,22 @@ size_t const kTronCryptPrivateKeyLength = 32;
     hdnode_get_ethereum_pubkeyhash(&node, publicKeyHash);
     
     //Get public address from seed
-    memcpy(addr + 1, publicKeyHash, kTronCryptPublicKeyHashSize);
+    memcpy(addr + 1, publicKeyHash, kTronSignaturePublicKeyHashSize);
     addr[0] = 0xa0;
-    NSData *addressData = [NSData dataWithBytes: &addr length: kTronCryptPublicKeyHashSize + 1];
+    NSData *addressData = [NSData dataWithBytes: &addr length: kTronSignaturePublicKeyHashSize + 1];
     _address = [NSString encodedBase58StringWithData: addressData];
     
     //Get private key from seed
-    NSData *privateKeyData = [NSData dataWithBytes: &node.private_key length: kTronCryptPrivateKeyLength];
+    NSData *privateKeyData = [NSData dataWithBytes: &node.private_key length: kTronSignaturePrivateKeyLength];
     _privateKey = [privateKeyData hexStringRepresentationUppercase: YES];
     
-    //Crypt is valid if we made it this far
+    //Signature is valid if we made it this far
     _valid = YES;
 }
 
 - (void) _updateFromPrivateKey
 {
-    if(!_privateKey || _privateKey.length != kTronCryptPrivateKeyLength * 2)
+    if(!_privateKey || _privateKey.length != kTronSignaturePrivateKeyLength * 2)
     {
         _valid = NO;
         return;
@@ -148,23 +150,58 @@ size_t const kTronCryptPrivateKeyLength = 32;
     
     //Declare variables
     HDNode node;
-    uint8_t publicKeyHash[kTronCryptPublicKeyHashSize];
-    uint8_t addr[kTronCryptPublicKeyHashSize + 1];
+    uint8_t publicKeyHash[kTronSignaturePublicKeyHashSize];
+    uint8_t addr[kTronSignaturePublicKeyHashSize + 1];
     const uint8_t *privateKeyBytes = (uint8_t *)[[NSData dataWithHexString: _privateKey] bytes];
     
     //Populate keys
-    hdnode_from_xprv(0, 0, 0, privateKeyBytes, (const char *)privateKeyBytes, &node);
+    hdnode_from_xprv(0, 0, privateKeyBytes, privateKeyBytes, SECP256K1_NAME, &node);
     hdnode_fill_public_key(&node);
     hdnode_get_ethereum_pubkeyhash(&node, publicKeyHash);
     
     //Get public address
-    memcpy(addr + 1, publicKeyHash, kTronCryptPublicKeyHashSize);
+    memcpy(addr + 1, publicKeyHash, kTronSignaturePublicKeyHashSize);
     addr[0] = 0xa0;
-    NSData *addressData = [NSData dataWithBytes: &addr length: kTronCryptPublicKeyHashSize + 1];
+    NSData *addressData = [NSData dataWithBytes: &addr length: kTronSignaturePublicKeyHashSize + 1];
     _address = [NSString encodedBase58StringWithData: addressData];
     
-    //Crypt is valid if we made it this far
+    //Signature is valid if we made it this far
     _valid = YES;
+}
+
+#pragma mark -
+#pragma mark Public Methods
+#pragma mark
+
+- (NSData *) sign: (NSData *) data
+{
+    //Get sha256 hash of data
+    uint8_t hash[kTronSignatureHashLength];
+    SHA256_CTX ctx;
+    sha256_Init(&ctx);
+    sha256_Update(&ctx, [data bytes], [data length]);
+    sha256_Final(&ctx, hash);
+    sha256_End(&ctx, NULL);
+    
+    //Declare variables
+    HDNode node;
+    uint8_t pby;
+    uint8_t signatureBytes[kTronSignatureDataSignatureLength];
+    const uint8_t *privateKeyBytes = (uint8_t *)[[NSData dataWithHexString: _privateKey] bytes];
+    
+    //Populate key
+    hdnode_from_xprv(0, 0, privateKeyBytes, privateKeyBytes, SECP256K1_NAME, &node);
+    
+    //Attempt to sign the data
+    int result = hdnode_sign_digest(&node, hash, signatureBytes, &pby, NULL);
+    if(result != 0)
+    { return nil; }
+    
+    //Set version
+    signatureBytes[64] = pby + 27;
+    
+    //Return data signature
+    return [NSData dataWithBytes: signatureBytes length: kTronSignatureDataSignatureLength];
 }
 
 #pragma mark -

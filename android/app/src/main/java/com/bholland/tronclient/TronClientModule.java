@@ -49,8 +49,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.lang.*;
 
-public class TronClientModule extends ReactContextBaseJavaModule {
-
+public class TronClientModule extends ReactContextBaseJavaModule
+{
   private static final String HOST_ADDRESS = "47.254.16.55:50051";
   private static final int TRX_DROP = 1000000;
 
@@ -60,7 +60,8 @@ public class TronClientModule extends ReactContextBaseJavaModule {
   private WalletGrpc.WalletBlockingStub blockingStubFull = null;
   private WalletSolidityGrpc.WalletSolidityBlockingStub blockingStubSolidity = null;
 
-  public TronClientModule(ReactApplicationContext reactContext) {
+  public TronClientModule(ReactApplicationContext reactContext)
+  {
       super(reactContext);
       this.reactContext = reactContext;
 
@@ -74,15 +75,15 @@ public class TronClientModule extends ReactContextBaseJavaModule {
   }
 
   @Override
-  public String getName() {
-      return "TronClient";
-  }
+  public String getName()
+  { return "TronClient"; }
 
-  private static byte[] decode58Check(String input) {
+  private static byte[] decode58Check(String input)
+  {
     byte[] decodeCheck = Base58.decode(input);
-    if (decodeCheck.length <= 4) {
-      return null;
-    }
+    if (decodeCheck.length <= 4)
+    { return null; }
+
     byte[] decodeData = new byte[decodeCheck.length - 4];
     System.arraycopy(decodeCheck, 0, decodeData, 0, decodeData.length);
     byte[] hash0 = Hash.sha256(decodeData);
@@ -90,13 +91,14 @@ public class TronClientModule extends ReactContextBaseJavaModule {
     if (hash1[0] == decodeCheck[decodeData.length] &&
         hash1[1] == decodeCheck[decodeData.length + 1] &&
         hash1[2] == decodeCheck[decodeData.length + 2] &&
-        hash1[3] == decodeCheck[decodeData.length + 3]) {
-      return decodeData;
-    }
+        hash1[3] == decodeCheck[decodeData.length + 3])
+    { return decodeData; }
+
     return null;
   }
 
-  public static String encode58Check(byte[] input) {
+  public static String encode58Check(byte[] input)
+  {
     byte[] hash0 = Hash.sha256(input);
     byte[] hash1 = Hash.sha256(hash0);
     byte[] inputCheck = new byte[input.length + 4];
@@ -105,8 +107,24 @@ public class TronClientModule extends ReactContextBaseJavaModule {
     return Base58.encode(inputCheck);
   }
 
+  public boolean broadcastTransaction(Transaction signaturedTransaction)
+  {
+    int i = 10;
+    GrpcAPI.Return response = blockingStubFull.broadcastTransaction(signaturedTransaction);
+    while (response.getResult() == false && response.getCode() == response_code.SERVER_BUSY && i > 0)
+    {
+      i--;
+      response = blockingStubFull.broadcastTransaction(signaturedTransaction);
+      try
+      { Thread.sleep(300); }
+      catch (InterruptedException e) { }
+    }
+    return response.getResult();
+  }
+
   @ReactMethod
-  public void generateAccount(String password, Promise promise) {
+  public void generateAccount(String password, Promise promise)
+  {
     //Create mnemonics
     final StringBuilder sb = new StringBuilder();
     byte[] entropy = new byte[Words.TWELVE.byteLength()];
@@ -131,7 +149,7 @@ public class TronClientModule extends ReactContextBaseJavaModule {
 
     //Get private key
     byte[] privateKeyBytes = key.getPrivKeyBytes();
-    String privateKey = Hex.toHexString(privateKeyBytes).toUpperCase();
+    String privateKey = ByteArray.toHexString(privateKeyBytes).toUpperCase();
 
     //Create generated account map
     WritableMap returnGeneratedAccount = Arguments.createMap();
@@ -144,7 +162,8 @@ public class TronClientModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void restoreAccount(String mnemonics, String password, Promise promise) {
+  public void restoreAccount(String mnemonics, String password, Promise promise)
+  {
     //Verify mnemonics are valid
     try
     {
@@ -170,7 +189,7 @@ public class TronClientModule extends ReactContextBaseJavaModule {
 
     //Get private key
     byte[] privateKeyBytes = key.getPrivKeyBytes();
-    String privateKey = Hex.toHexString(privateKeyBytes).toUpperCase();
+    String privateKey = ByteArray.toHexString(privateKeyBytes).toUpperCase();
 
     //Create restored account map
     WritableMap returnRestoredAccount = Arguments.createMap();
@@ -183,22 +202,24 @@ public class TronClientModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void getAccount(String accountAddress, Promise promise) {
+  public void getAccount(String accountAddress, Promise promise)
+  {
     //Decode base58 address
     byte[] decodedAddress = decode58Check(accountAddress);
     ByteString addressBS = ByteString.copyFrom(decodedAddress);
 
     //Attempt to get account using decoded address
-    Account request = Account.newBuilder().setAddress(addressBS).build();
-    Account response = blockingStubFull.getAccount(request);
-    if(response == null)
+    Account requestAccount = Account.newBuilder().setAddress(addressBS).build();
+    Account responseAccount = blockingStubFull.getAccount(requestAccount);
+    if(responseAccount == null)
     {
       //No response, reject and return
       promise.reject("Failed to get account", "No response from host", null);
       return;
     }
 
-    Map<String, Long> responseAssetMap = response.getAssetMap();
+    //Parse tokens
+    Map<String, Long> responseAssetMap = responseAccount.getAssetMap();
     WritableArray returnAssets = Arguments.createArray();
     for (Map.Entry<String, Long> asset : responseAssetMap.entrySet())
     {
@@ -208,11 +229,55 @@ public class TronClientModule extends ReactContextBaseJavaModule {
       returnAssets.pushMap(assetMap);
     }
 
+    //Create account map
     WritableMap returnAccountMap = Arguments.createMap();
     returnAccountMap.putString("address", accountAddress);
-    returnAccountMap.putString("name", response.getAccountName().toStringUtf8());
-    returnAccountMap.putDouble("balance", (response.getBalance() / TRX_DROP));
+    returnAccountMap.putString("name", responseAccount.getAccountName().toStringUtf8());
+    returnAccountMap.putDouble("balance", (responseAccount.getBalance() / TRX_DROP));
     returnAccountMap.putArray("assets", returnAssets);
+
+    //Return account map
     promise.resolve(returnAccountMap);
+  }
+
+  @ReactMethod
+  public void send(String ownerPrivateKey, String toAddress, int amount, Promise promise)
+  {
+    //Get key and from address
+    byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+    ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+    byte[] ownerAddressBytes = ownerKey.getAddress();
+    ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+    //Get decoded to address
+    byte[] decodedToAddress = decode58Check(toAddress);
+    ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
+
+    //Create transfer contract
+    Contract.TransferContract transferContract = Contract.TransferContract
+      .newBuilder()
+      .setOwnerAddress(ownerAddressBS)
+      .setToAddress(toAddressBS)
+      .setAmount(amount * TRX_DROP)
+      .build();
+
+    //Attempt to create the transaction using the transfer contract
+    Transaction transaction = blockingStubFull.createTransaction(transferContract);
+    if(transaction == null || transaction.getRawData().getContractCount() == 0)
+    {
+      //Problem creating transaction, reject and return
+      promise.reject("Failed to send", "No/bad response from host", null);
+      return;
+    }
+
+    //Set timestamp and sign transaction
+    transaction = TransactionUtils.setTimestamp(transaction);
+    transaction = TransactionUtils.sign(transaction, ownerKey);
+
+    //Attempt to broadcast the transaction
+    boolean returnResult = broadcastTransaction(transaction);
+
+    //Return result
+    promise.resolve(returnResult);
   }
 }

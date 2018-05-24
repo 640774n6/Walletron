@@ -129,7 +129,6 @@ PODS:
     - gRPC-Core (= 1.12.0)
     - gRPC-RxLibrary (= 1.12.0)
   - JKBigInteger2 (0.0.5)
-  - libbase58 (0.1.4)
   - lottie-ios (2.1.5)
   - nanopb (0.3.8):
     - nanopb/decode (= 0.3.8)
@@ -137,7 +136,6 @@ PODS:
   - nanopb/decode (0.3.8)
   - nanopb/encode (0.3.8)
   - "NSData+FastHex (1.0.1)"
-  - OpenSSL (1.0.210)
   - Protobuf (3.5.0)
   - React (0.55.2):
     - React/Core (= 0.55.2)
@@ -192,14 +190,14 @@ PODS:
     - React/RCTBlob
   - TrezorCrypto (0.0.5)
   - TronProtocol (1.0.0):
-    - "!ProtoCompiler-gRPCPlugin (~> 1.0)"
+    - "!ProtoCompiler-gRPCPlugin"
     - TronProtocol/Messages (= 1.0.0)
     - TronProtocol/Services (= 1.0.0)
   - TronProtocol/Messages (1.0.0):
-    - "!ProtoCompiler-gRPCPlugin (~> 1.0)"
+    - "!ProtoCompiler-gRPCPlugin"
     - Protobuf
   - TronProtocol/Services (1.0.0):
-    - "!ProtoCompiler-gRPCPlugin (~> 1.0)"
+    - "!ProtoCompiler-gRPCPlugin"
     - gRPC-ProtoRPC
     - TronProtocol/Messages
   - yoga (0.55.2.React)
@@ -211,9 +209,7 @@ DEPENDENCIES:
   - ExpoKit/GL (from `http://github.com/expo/expo.git`, tag `ios/2.5.9`)
   - Folly (from `../node_modules/react-native/third-party-podspecs/Folly.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
-  - libbase58
   - "NSData+FastHex"
-  - OpenSSL
   - React/ART (from `../node_modules/react-native`)
   - React/Core (from `../node_modules/react-native`)
   - React/CxxBridge (from `../node_modules/react-native`)
@@ -264,11 +260,9 @@ SPEC REPOS:
     - gRPC-ProtoRPC
     - gRPC-RxLibrary
     - JKBigInteger2
-    - libbase58
     - lottie-ios
     - nanopb
     - "NSData+FastHex"
-    - OpenSSL
     - Protobuf
     - TrezorCrypto
 
@@ -330,17 +324,15 @@ SPEC CHECKSUMS:
   gRPC-ProtoRPC: a1bd56fb1991a8dae4581250d7259eddabb66779
   gRPC-RxLibrary: 1ed5314e8b38cd6e55c9bfa048387136ae925ce9
   JKBigInteger2: e91672035c42328c48b7dd015b66812ddf40ca9b
-  libbase58: 7c040313537b8c44b6e2d15586af8e21f7354efd
   lottie-ios: 836cdbba92f62f3c6a00e37a4ce485321fe317cf
   nanopb: 5601e6bca2dbf1ed831b519092ec110f66982ca3
   "NSData+FastHex": a22ad031ee10a4297d0bf4d20cf03406a4476169
-  OpenSSL: 246ffb948e9d56466727fd318134af35f5aa764e
   Protobuf: 8a9838fba8dae3389230e1b7f8c104aa32389c03
   React: 977e1cdf18a3047a35d321b34ffb678d79d19076
   TrezorCrypto: ecef681446bf02af6248d3b5e394026d7e766e56
-  TronProtocol: 20d6c3930d4ab84c7beef821f7b67af2df128d2b
+  TronProtocol: b8bf26b8775fa38dc5ff21c5d4ed47536ee77a04
   yoga: a23273df0088bf7f2bb7e5d7b00044ea57a2a54a
 
-PODFILE CHECKSUM: 1b2e2fb6605ca5d0ac9081a9f278827ab7bfea04
+PODFILE CHECKSUM: 441aadf2a4862585d1542cc5c3fa4481eff6aa22
 
 COCOAPODS: 1.5.2

@@ -1,5 +1,5 @@
 //
-//  TronCrypt.h
+//  TronSignature.h
 //  walletron
 //
 //  Created by Brandon Holland on 2018-05-22.
@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface TronCrypt : NSObject
+@interface TronSignature : NSObject
 {
     NSString *_mnemonics;
     NSString *_address;
@@ -18,13 +18,14 @@
     BOOL _fromWords;
 }
 + (NSString *) generateNewMnemonics;
-+ (id) cryptWithMnemonics: (NSString *) mnemonics
-                   secret: (NSString *) secret;
-+ (id) cryptWithPrivateKey: (NSString *) privateKey;
-+ (id) generatedCryptWithSecret: (NSString *) secret;
++ (id) signatureWithMnemonics: (NSString *) mnemonics
+                       secret: (NSString *) secret;
++ (id) signatureWithPrivateKey: (NSString *) privateKey;
++ (id) generatedSignatureWithSecret: (NSString *) secret;
 - (id) initWithMnemonics: (NSString *) mnemonics
                   secret: (NSString *) secret;
 - (id) initWithPrivateKey: (NSString *) privateKey;
+- (NSData *) sign: (NSData *) data;
 - (BOOL) valid;
 - (BOOL) fromWords;
 - (NSString *) mnemonics;
