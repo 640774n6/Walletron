@@ -27,11 +27,6 @@ import org.tron.common.crypto.SymmEncoder;
 import org.tron.common.utils.*;
 
 import org.tron.protos.Contract;
-import org.tron.protos.Contract.AssetIssueContract;
-import org.tron.protos.Contract.FreezeBalanceContract;
-import org.tron.protos.Contract.UnfreezeAssetContract;
-import org.tron.protos.Contract.UnfreezeBalanceContract;
-import org.tron.protos.Contract.WithdrawBalanceContract;
 import org.tron.protos.Protocol.Account;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.Transaction;
@@ -58,7 +53,6 @@ public class TronClientModule extends ReactContextBaseJavaModule
 
   private ManagedChannel channelFull = null;
   private WalletGrpc.WalletBlockingStub blockingStubFull = null;
-  private WalletSolidityGrpc.WalletSolidityBlockingStub blockingStubSolidity = null;
 
   public TronClientModule(ReactApplicationContext reactContext)
   {
@@ -78,7 +72,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
   public String getName()
   { return "TronClient"; }
 
-  private static byte[] decode58Check(String input)
+  private static byte[] _decode58Check(String input)
   {
     byte[] decodeCheck = Base58.decode(input);
     if (decodeCheck.length <= 4)
@@ -97,7 +91,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
     return null;
   }
 
-  public static String encode58Check(byte[] input)
+  private static String _encode58Check(byte[] input)
   {
     byte[] hash0 = Hash.sha256(input);
     byte[] hash1 = Hash.sha256(hash0);
@@ -107,7 +101,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
     return Base58.encode(inputCheck);
   }
 
-  public boolean broadcastTransaction(Transaction signaturedTransaction)
+  private boolean _broadcastTransaction(Transaction signaturedTransaction)
   {
     int i = 10;
     GrpcAPI.Return response = blockingStubFull.broadcastTransaction(signaturedTransaction);
@@ -145,7 +139,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
 
     //Get public address
     byte[] addressBytes = key.getAddress();
-    String address = encode58Check(addressBytes);
+    String address = _encode58Check(addressBytes);
 
     //Get private key
     byte[] privateKeyBytes = key.getPrivKeyBytes();
@@ -185,7 +179,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
 
     //Get public address
     byte[] addressBytes = key.getAddress();
-    String address = encode58Check(addressBytes);
+    String address = _encode58Check(addressBytes);
 
     //Get private key
     byte[] privateKeyBytes = key.getPrivKeyBytes();
@@ -205,7 +199,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
   public void getAccount(String accountAddress, Promise promise)
   {
     //Decode base58 address
-    byte[] decodedAddress = decode58Check(accountAddress);
+    byte[] decodedAddress = _decode58Check(accountAddress);
     ByteString addressBS = ByteString.copyFrom(decodedAddress);
 
     //Attempt to get account using decoded address
@@ -243,14 +237,14 @@ public class TronClientModule extends ReactContextBaseJavaModule
   @ReactMethod
   public void send(String ownerPrivateKey, String toAddress, int amount, Promise promise)
   {
-    //Get key and from address
+    //Get key
     byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
     ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+    //Get data for contract
     byte[] ownerAddressBytes = ownerKey.getAddress();
     ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
-
-    //Get decoded to address
-    byte[] decodedToAddress = decode58Check(toAddress);
+    byte[] decodedToAddress = _decode58Check(toAddress);
     ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
 
     //Create transfer contract
@@ -275,7 +269,51 @@ public class TronClientModule extends ReactContextBaseJavaModule
     transaction = TransactionUtils.sign(transaction, ownerKey);
 
     //Attempt to broadcast the transaction
-    boolean returnResult = broadcastTransaction(transaction);
+    boolean returnResult = _broadcastTransaction(transaction);
+
+    //Return result
+    promise.resolve(returnResult);
+  }
+
+  @ReactMethod
+  public void sendAsset(String ownerPrivateKey, String toAddress, String assetName, int amount, Promise promise)
+  {
+    //Get key
+    byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+    ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+    //Get data for contract
+    byte[] ownerAddressBytes = ownerKey.getAddress();
+    ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+    byte[] decodedToAddress = _decode58Check(toAddress);
+    ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
+    byte[] assetNameBytes = assetName.getBytes();
+    ByteString assetNameBS = ByteString.copyFrom(assetNameBytes);
+
+    //Create transfer asset contract
+    Contract.TransferAssetContract transferAssetContract = Contract.TransferAssetContract
+      .newBuilder()
+      .setOwnerAddress(ownerAddressBS)
+      .setToAddress(toAddressBS)
+      .setAssetName(assetNameBS)
+      .setAmount(amount)
+      .build();
+
+    //Attempt to create the transaction using the transfer asset contract
+    Transaction transaction = blockingStubFull.transferAsset(transferAssetContract);
+    if(transaction == null || transaction.getRawData().getContractCount() == 0)
+    {
+      //Problem creating transaction, reject and return
+      promise.reject("Failed to send", "No/bad response from host", null);
+      return;
+    }
+
+    //Set timestamp and sign transaction
+    transaction = TransactionUtils.setTimestamp(transaction);
+    transaction = TransactionUtils.sign(transaction, ownerKey);
+
+    //Attempt to broadcast the transaction
+    boolean returnResult = _broadcastTransaction(transaction);
 
     //Return result
     promise.resolve(returnResult);
