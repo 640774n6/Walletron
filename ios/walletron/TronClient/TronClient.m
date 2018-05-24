@@ -67,6 +67,30 @@ RCT_EXPORT_MODULE();
     return returnTransaction;
 }
 
+- (Transaction * _Nullable) _createTransactionWithTransferAssetContract: (TransferAssetContract *) transferAssetContract
+{
+    //Declare variables
+    __block Transaction * _Nullable returnTransaction = nil;
+    
+    //Attempt to create the transaction using the transfer contract
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet transferAssetWithRequest: transferAssetContract handler:^(Transaction * _Nullable transaction, NSError * _Nullable error)
+     {
+         //If we got a valid response
+         if(transaction && transaction.rawData.contractArray_Count > 0)
+         { returnTransaction = transaction; }
+         
+         //Signal that create transaction is finished
+         dispatch_semaphore_signal(sema);
+     }];
+    
+    //Wait for create transaction to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return transaction
+    return returnTransaction;
+}
+
 - (BOOL) _broadcastTransaction: (Transaction * _Nullable) transaction
 {
     //Declare variables
@@ -221,9 +245,11 @@ RCT_REMAP_METHOD(send,
         return;
     }
     
+    //Get data for contract
     NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
     NSData *toAddressData = [toAddress decodedBase58Data];
     
+    //Create transfer contract
     TransferContract *transferContract = [TransferContract message];
     transferContract.ownerAddress = ownerAddressData;
     transferContract.toAddress = toAddressData;
@@ -235,6 +261,59 @@ RCT_REMAP_METHOD(send,
     {
         //Problem creating transaction, reject and return
         reject(@"Failed to send", @"No/bad response from host for create transaction", nil);
+        return;
+    }
+    
+    //Set transaction timestamp and get signature
+    transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);
+    NSData *signatureData = [tronSignature sign: transaction.rawData.data];
+    
+    //Add signature for each contract in transaction (Each contract could have a different signature in the future)
+    for(int i = 0; i < transaction.rawData.contractArray_Count; i++)
+    { [transaction.signatureArray addObject: signatureData]; }
+    
+    //Attempt to broadcast the transaction
+    BOOL result = [self _broadcastTransaction: transaction];
+    
+    //Return result
+    resolve(@(result));
+}
+
+RCT_REMAP_METHOD(sendAsset,
+                 ownerPrivateKey:(NSString *)ownerPrivateKey
+                 toAddress:(NSString *)toAddress
+                 assetName:(NSString *)tokenName
+                 amount:(NSNumber * _Nonnull)amount
+                 sendAssetWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    //Create tron signature for private key, then verify it is valid
+    TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
+    if(!tronSignature.valid)
+    {
+        //Signature is invalid, reject and return
+        reject(@"Failed to send", @"Owner private key invalid", nil);
+        return;
+    }
+    
+    //Get data for contract
+    NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
+    NSData *toAddressData = [toAddress decodedBase58Data];
+    NSData *assetNameData = [tokenName dataUsingEncoding: NSUTF8StringEncoding];
+    
+    //Create transfer asset contract
+    TransferAssetContract *transferAssetContract = [TransferAssetContract message];
+    transferAssetContract.ownerAddress = ownerAddressData;
+    transferAssetContract.toAddress = toAddressData;
+    transferAssetContract.assetName = assetNameData;
+    transferAssetContract.amount = [amount longLongValue];
+    
+    //Attempt to create the transaction using the transfer asset contract
+    Transaction * _Nullable transaction = [self _createTransactionWithTransferAssetContract: transferAssetContract];
+    if(!transaction)
+    {
+        //Problem creating transaction, reject and return
+        reject(@"Failed to send token", @"No/bad response from host for create transaction", nil);
         return;
     }
     

@@ -35,9 +35,14 @@ export default class CreateWalletScreen extends React.Component
     var sendResult = await tronClient.send(ownerPrivateKey, restoredAccount.address, 1);
     console.log("SEND SUCCESS: " + sendResult);
 
+    var sendAssetResult = await tronClient.sendAsset(ownerPrivateKey, restoredAccount.address, 'Eureka', 1);
+    console.log("SEND ASSET SUCCESS: " + sendAssetResult);
+
     var account = await tronClient.getAccount(restoredAccount.address);
     console.log('GET ACCOUNT:');
     console.log('balance: ' + account.balance);
+    account.assets.forEach((asset) =>
+    { console.log(asset.name + ': ' + asset.balance); });
   }
 
   render()
