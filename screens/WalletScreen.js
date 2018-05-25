@@ -1,18 +1,70 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, View, Text, ScrollView, Animated, FlatList, NativeModules } from 'react-native';
-import { ListItem, Button } from 'react-native-elements';
+import { StatusBar, SafeAreaView, TouchableOpacity, TouchableHighlight, View, Text, ScrollView, Animated, SectionList, NativeModules } from 'react-native';
+import { ListItem, Button, Icon } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo';
+import ModalDropdown from 'react-native-modal-dropdown';
 
 import NavigationHelper from '../libs/NavigationHelper.js';
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
-import Blockie from '../libs/Blockie.js';
+import BlockieSvg from '../libs/BlockieSvg.js';
 
 const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
 const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
 
+const SECTIONS = [{
+  key: 0,
+  title: 'Tokens',
+  icon: {
+    name: 'coins',
+    type: 'material-community',
+    color: '#000000'
+  },
+  empty: {
+    title: 'You have no tokens',
+    message: 'Create or buy using the token menu'
+  },
+  data: []
+},
+{
+  key: 1,
+  title: 'Freezer',
+  icon: {
+    name: 'snowflake-o',
+    type: 'font-awesome',
+    color: '#000000'
+  },
+  empty: {
+    title: 'You have no frozen balances',
+    message: 'Freeze balances using the freezer menu'
+  },
+  data: []
+}];
+
 export default class WalletScreen extends React.Component {
+  static renderWalletDropDownRow(rowData, rowID, highlighted) {
+    return (
+      <TouchableOpacity>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 15
+        }}>
+          <Text style={{ fontSize: 16 }}>{rowData.name}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  static adjustFrameWalletDropDown(style) {
+    style.top += 15;
+    style.right += 15;
+    style.height = 'auto';
+    style.maxHeight = 200;
+    return style;
+  }
+
   static navigationOptions = ({ navigation }) => {
     return {
       title: 'Wallet',
@@ -27,9 +79,30 @@ export default class WalletScreen extends React.Component {
         </View>
       ),
       headerRight: (
-        <TouchableOpacity>
+        <ModalDropdown
+          options={[
+            { name: 'Master Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
+            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS }
+          ]}
+          animated={false}
+          showsVerticalScrollIndicator={true}
+          adjustFrame={ WalletScreen.adjustFrameWalletDropDown.bind(this) }
+          renderRow={ WalletScreen.renderWalletDropDownRow.bind(this) }
+          dropdownStyle={{
+            borderWidth: 0,
+            borderRadius: 8,
+            overflow: 'hidden'
+          }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-            <Blockie
+            <BlockieSvg
               size={16}
               scale={1.5}
               seed={TEST_WALLET_ADDRESS}
@@ -40,7 +113,7 @@ export default class WalletScreen extends React.Component {
             }}/>
             <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
           </View>
-        </TouchableOpacity>
+        </ModalDropdown>
       )
     }
   };
@@ -52,7 +125,7 @@ export default class WalletScreen extends React.Component {
     this.state = {
       balance: 0.0,
       value: 0.0,
-      tokens: [],
+      sections: SECTIONS,
       loaded: false
     }
 
@@ -67,11 +140,16 @@ export default class WalletScreen extends React.Component {
     const tronClient = NativeModules.TronClient;
     var account = await tronClient.getAccount(TEST_WALLET_ADDRESS);
     var trxBalance = parseFloat(account.balance);
+    //for(var i = 0; i < 100; i++)
+    //{ account.assets.push(account.assets[0]); }
+
+    var sections = this.state.sections;
+    sections[0].data = account.assets;
 
     this.setState({
       balance: trxBalance,
       value: trxValue,
-      tokens: account.assets,
+      sections: sections,
       loaded: true });
   }
 
@@ -89,24 +167,64 @@ export default class WalletScreen extends React.Component {
     this.scrollView.scrollTo({ y: 0, animated: true });
   }
 
-  renderTokenListItem = ({ item, index }) => {
+  renderSectionHeaderItem = ({ section, key}) => {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Icon name={section.icon.name} type={section.icon.type} size={22} color={ section.icon.color }/>
+          <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>{section.title}</Text>
+        </View>
+        <TouchableOpacity>
+          <Entypo
+            style={{ marginRight: 10 }}
+            name='dots-three-horizontal'
+            size={28}
+            color='#333333'/>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  renderSectionFooterItem = ({section, key}) => {
+    if(section.data.length === 0)
+    {
+      return (
+        <View style={{
+          alignItems: 'center',
+          backgroundColor: '#ffffff',
+          borderRadius: 8,
+          padding: 15,
+          marginLeft: 10,
+          marginRight: 10,
+          marginBottom: section.key === this.state.sections.length - 1 ? 10 : null,
+        }}>
+          <Text style={{ fontSize: 16, color: '#000000', marginBottom: 5 }}>{ section.empty.title }</Text>
+          <Text style={{ fontSize: 14, color: '#777777' }}>{ section.empty.message }</Text>
+        </View>
+      );
+    }
+    else
+    { return null; }
+  }
+
+  renderListItem = ({ item, index, section }) => {
     return (
       <ListItem
         key={ index }
         title={ item.name }
         titleStyle={{ color: '#000000', fontSize: 16 }}
-        leftElement={<Blockie containerStyle={{ borderRadius: 5, overflow: 'hidden' }} size={16} scale={2.0} seed={ item.name }/>}
+        leftAvatar={{ rounded: true, title: item.name.toUpperCase().charAt(0) }}
         rightTitle={ item.balance.toString() }
         rightTitleStyle={{ color: '#000000', fontSize: 18 }}
         hideChevron
         containerStyle={{
           borderTopLeftRadius: index === 0 ? 8 : null,
           borderTopRightRadius: index === 0 ? 8 : null,
-          borderBottomLeftRadius: index === this.state.tokens.length - 1 ? 8 : null,
-          borderBottomRightRadius: index === this.state.tokens.length - 1 ? 8 : null,
+          borderBottomLeftRadius: index === section.data.length - 1 ? 8 : null,
+          borderBottomRightRadius: index === section.data.length - 1 ? 8 : null,
           backgroundColor: '#ffffff',
-          borderBottomColor: index != this.state.tokens.length - 1 ? '#dfdfdf' : null,
-          borderBottomWidth: index != this.state.tokens.length - 1 ? 1 : null,
+          borderBottomColor: index != section.data.length - 1 ? '#dfdfdf' : null,
+          borderBottomWidth: index != section.data.length - 1 ? 1 : null,
           marginLeft: 10,
           marginRight: 10
         }}/>
@@ -142,32 +260,12 @@ export default class WalletScreen extends React.Component {
           scrollIndicatorInsets={{ top: HEADER_MAX_HEIGHT }}
           scrollEventThrottle={ 16 }
           onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialCommunityIcons name='coins' size={22} color='#333333'/>
-              <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Tokens</Text>
-            </View>
-            <Entypo
-              style={{ marginRight: 10 }}
-              name='dots-three-horizontal'
-              size={28}
-              color='#333333'/>
-          </View>
-          <FlatList
-            keyExtractor={(item, index) => item + index}
-            renderItem={ this.renderTokenListItem }
-            data={ this.state.tokens }/>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <FontAwesome name='snowflake-o' size={22} color='#333333'/>
-              <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Freezer</Text>
-            </View>
-            <Entypo
-              style={{ marginRight: 10 }}
-              name='dots-three-horizontal'
-              size={28}
-              color='#333333'/>
-          </View>
+          <SectionList
+            keyExtractor={(item, index) => index}
+            renderSectionHeader={ this.renderSectionHeaderItem }
+            renderSectionFooter={ this.renderSectionFooterItem }
+            sections={ this.state.sections }
+            renderItem={ this.renderListItem }/>
         </ScrollView>
         <Animated.View
           style={{

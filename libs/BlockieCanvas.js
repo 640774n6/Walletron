@@ -1,12 +1,12 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Svg } from 'expo';
+import { View, Image } from 'react-native';
+import Canvas from 'react-native-canvas';
 
-const randseed = new Array(4);
-
-class Blockie extends React.Component {
+class BlockieCanvas extends React.Component {
+  static randseed = new Array(4);
 
   seedrand(seed) {
+    const randseed = BlockieCanvas.randseed;
     for (let i = 0; i < randseed.length; i++) {
       randseed[i] = 0;
     }
@@ -17,6 +17,7 @@ class Blockie extends React.Component {
   }
 
   rand() {
+    const randseed = BlockieCanvas.randseed;
     const t = randseed[0] ^ (randseed[0] << 11);
 
     randseed[0] = randseed[1];
@@ -45,7 +46,6 @@ class Blockie extends React.Component {
     const mirrorWidth = width - dataWidth;
 
     const data = [];
-
     for (let y = 0; y < height; y++) {
       let row = [];
 
@@ -54,56 +54,45 @@ class Blockie extends React.Component {
       }
 
       let r = row.slice(0, mirrorWidth);
-
       r.reverse();
-
       row = row.concat(r);
 
       for (let i = 0; i < row.length; i++) {
         data.push(row[i]);
       }
     }
-
     return data;
   }
 
-  renderIcon(size, scale) {
-    const seed = this.props.seed || Math.floor((Math.random()*Math.pow(10,16))).toString(16);
+  handleCanvas = async(canvas) => {
+    if(canvas)
+    {
+      const seed = this.props.seed || Math.floor((Math.random()*Math.pow(10,16))).toString(16);
+      this.seedrand(seed);
 
-    this.seedrand(seed);
+      const color = this.props.color || this.createColor();
+      const bgcolor = this.props.bgcolor || this.createColor();
+      const spotcolor = this.props.spotcolor || this.createColor();
+      const scale = this.props.scale || 8;
+      const size = this.props.size || 8;
 
-    const color = this.props.color || this.createColor();
-    const bgcolor = this.props.bgcolor || this.createColor();
-    const spotcolor = this.props.spotcolor || this.createColor();
+      const imageData = this.createImageData(size);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = bgcolor;
+      ctx.fillRect(0, 0, size * scale, size * scale);
 
-    const imageData = this.createImageData(size);
-    const width = Math.sqrt(imageData.length);
+      imageData.forEach((item, i) => {
+        if(item)
+        {
+          var fill = (item === 1) ? color : spotcolor;
+          var row = Math.floor(i / size);
+          var col = i % size;
 
-    return imageData.map((item, i) => {
-      let fill = bgcolor;
-
-      if (item) {
-        if (item === 1) {
-          fill = color;
-        } else {
-          fill = spotcolor;
+          ctx.fillStyle = fill;
+          ctx.fillRect(col * scale, row * scale, scale, scale);
         }
-      }
-
-      let row = Math.floor(i / size);
-      let col = i % size;
-
-      return (
-        <Svg.Rect
-          key={i}
-          x={col * scale}
-          y={row * scale}
-          width={scale}
-          height={scale}
-          fill={fill}
-        />
-      );
-    });
+      });
+    }
   }
 
   render() {
@@ -111,15 +100,14 @@ class Blockie extends React.Component {
     const scale = this.props.scale || 8;
 
     return (
-      <View style={this.props.containerStyle}>
-        <Svg
-          height={size * scale}
-          width={size * scale}>
-          {this.renderIcon(size, scale)}
-        </Svg>
+      <View style={[
+        this.props.containerStyle,
+        { width: size * scale, height: size * scale }
+      ]}>
+        <Canvas ref={ this.handleCanvas.bind(this) }/>
       </View>
     );
   }
 }
 
-export default Blockie;
+export default BlockieCanvas;

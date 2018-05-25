@@ -4,7 +4,7 @@ import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode';
 
-import Blockie from '../libs/Blockie.js';
+import BlockieSvg from '../libs/BlockieSvg.js';
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
 
 const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
@@ -38,7 +38,7 @@ export default class ReceiveScreen extends React.Component
               flexDirection: 'row',
               marginBottom: 15
             }}>
-              <Blockie
+              <BlockieSvg
                 size={16}
                 scale={1.5}
                 seed={TEST_WALLET_ADDRESS}

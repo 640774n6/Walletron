@@ -154,6 +154,7 @@ const StartNavigator = createStackNavigator(
 {
   initialRouteName: 'StartRoot',
   headerMode: 'none',
+  mode: 'modal',
   navigationOptions: {
     gesturesEnabled: false
   },
@@ -169,6 +170,7 @@ const MainNavigator = createStackNavigator(
 {
   initialRouteName: 'MainRoot',
   headerMode: 'none',
+  mode: 'modal',
   navigationOptions: {
     gesturesEnabled: false
   },
@@ -181,7 +183,7 @@ const RootNavigator = createSwitchNavigator(
   Main: MainNavigator
 },
 {
-  initialRouteName: 'Start',
+  initialRouteName: 'Main',
 });
 
 export default class App extends React.Component
