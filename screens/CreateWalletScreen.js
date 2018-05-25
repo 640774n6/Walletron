@@ -8,9 +8,9 @@ export default class CreateWalletScreen extends React.Component
   static navigationOptions = ({ navigation }) => {
     return {
       title: 'Create Wallet',
-      headerLeft: (
+      headerRight: (
         <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
-          <Text style={{ color: '#ffffff', marginLeft: 15 }}>Cancel</Text>
+          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
         </TouchableOpacity>
       )
     };
@@ -45,7 +45,7 @@ export default class CreateWalletScreen extends React.Component
     { console.log(asset.name + ': ' + asset.balance); });
   }
 
-  async componentDidMount()
+  componentDidMount()
   {
     this.reloadData();
   }

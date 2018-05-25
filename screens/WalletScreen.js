@@ -4,46 +4,45 @@ import { ListItem, Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo';
 
+import NavigationHelper from '../libs/NavigationHelper.js';
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
-import Blockie from '../libs/blockie.js';
+import Blockie from '../libs/Blockie.js';
 
 const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
 const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
 
-const headerLeft = (
-  <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
-    <TouchableOpacity>
-      <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
-    </TouchableOpacity>
-    <TouchableOpacity>
-      <FontAwesome name='qrcode' color='#ffffff' size={24}/>
-    </TouchableOpacity>
-  </View>
-);
-
-const headerRight = (
-  <TouchableOpacity>
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-      <Blockie
-        size={16}
-        scale={1.5}
-        seed={TEST_WALLET_ADDRESS}
-        containerStyle={{
-          overflow: 'hidden',
-          marginLeft: 15,
-          borderRadius: 3,
-      }}/>
-      <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
-    </View>
-  </TouchableOpacity>
-);
-
 export default class WalletScreen extends React.Component {
-  static navigationOptions = {
-    title: 'Wallet',
-    headerLeft: headerLeft,
-    headerRight: headerRight
+  static navigationOptions = ({ navigation }) => {
+    return {
+      title: 'Wallet',
+      headerLeft: (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
+          <TouchableOpacity onPress={ () => navigation.navigate('Send') }>
+            <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={ () => navigation.navigate('Receive') }>
+            <FontAwesome name='qrcode' color='#ffffff' size={24}/>
+          </TouchableOpacity>
+        </View>
+      ),
+      headerRight: (
+        <TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+            <Blockie
+              size={16}
+              scale={1.5}
+              seed={TEST_WALLET_ADDRESS}
+              containerStyle={{
+                overflow: 'hidden',
+                marginLeft: 15,
+                borderRadius: 3,
+            }}/>
+            <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
+          </View>
+        </TouchableOpacity>
+      )
+    }
   };
 
   constructor()

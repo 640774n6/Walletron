@@ -15,11 +15,11 @@ export default class StartScreen extends React.Component
   }
 
   onCreateWalletPressed = () => {
-    this.props.navigation.navigate('CreateWallet');
+    this.props.navigation.navigate({ routeName: 'CreateWallet', params: { transition: 'modal'} });
   }
 
   onImportWalletPressed = () => {
-    this.props.navigation.navigate('ImportWallet');
+    this.props.navigation.navigate({ routeName: 'ImportWallet', params: { transition: 'modal'} });
   }
 
   render()
