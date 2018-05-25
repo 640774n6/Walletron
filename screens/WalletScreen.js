@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, TouchableHighlight, View, Text, ScrollView, Animated, SectionList, NativeModules } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, TouchableHighlight, View, Text, ScrollView, Animated, SectionList, NativeModules, Platform } from 'react-native';
 import { ListItem, Button, Icon } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo';
@@ -58,7 +58,7 @@ export default class WalletScreen extends React.Component {
   }
 
   static adjustFrameWalletDropDown(style) {
-    style.top += 15;
+    style.top += Platform.OS === 'android' ? -15 : 15;
     style.right += 15;
     style.height = 'auto';
     style.maxHeight = 200;
