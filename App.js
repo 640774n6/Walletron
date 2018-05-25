@@ -148,8 +148,8 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
 const StartNavigator = createStackNavigator(
 {
   StartRoot: StartScreen,
-  CreateWallet: NavigationHelper.createSingleScreenNavigator({ CreateWalletContent: CreateWalletScreen }),
-  ImportWallet: NavigationHelper.createSingleScreenNavigator({ ImportWalletContent: ImportWalletScreen }),
+  CreateWallet: NavigationHelper.createSingleScreenNavigator({ CreateWalletRoot: CreateWalletScreen }),
+  ImportWallet: NavigationHelper.createSingleScreenNavigator({ ImportWalletRoot: ImportWalletScreen }),
 },
 {
   initialRouteName: 'StartRoot',
@@ -163,8 +163,8 @@ const StartNavigator = createStackNavigator(
 const MainNavigator = createStackNavigator(
 {
   MainRoot: MainScreenBottomTabNavigator,
-  Receive: NavigationHelper.createSingleScreenNavigator({ ReceiveContent: ReceiveScreen }),
-  Send: NavigationHelper.createSingleScreenNavigator({ SendContent: SendScreen })
+  Receive: NavigationHelper.createSingleScreenNavigator({ ReceiveRoot: ReceiveScreen }),
+  Send: NavigationHelper.createSingleScreenNavigator({ SendRoot: SendScreen })
 },
 {
   initialRouteName: 'MainRoot',
@@ -178,7 +178,7 @@ const MainNavigator = createStackNavigator(
 const RootNavigator = createSwitchNavigator(
 {
   Start: StartNavigator,
-  Main: MainNavigator,
+  Main: MainNavigator
 },
 {
   initialRouteName: 'Start',

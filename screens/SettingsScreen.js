@@ -26,7 +26,6 @@ export default class SettingsScreen extends React.Component
   constructor()
   {
     super();
-
     this.state = {
       settings: DEFAULT_SETTINGS
     }
