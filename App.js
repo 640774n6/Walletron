@@ -13,7 +13,6 @@ import ImportWalletScreen from './screens/ImportWalletScreen.js';
 import StartScreen from './screens/StartScreen.js';
 import WalletScreen from './screens/WalletScreen.js';
 import TransactionsScreen from './screens/TransactionsScreen.js';
-import RecipientsScreen from './screens/RecipientsScreen.js';
 import VoteScreen from './screens/VoteScreen.js';
 import SettingsScreen from './screens/SettingsScreen.js';
 
@@ -73,24 +72,6 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
       headerTintColor: '#ffffff'
     }
   }),
-  Recipients: createStackNavigator(
-  { RecipientsRoot: RecipientsScreen },
-  {
-    initialRouteName: 'RecipientsRoot',
-    navigationOptions:
-    {
-      headerTitleStyle: { flex: 1, textAlign: 'center' },
-      headerStyle: {
-        backgroundColor: '#333333',
-        borderBottomWidth: 0,
-        shadowOpacity: 0,
-        elevation: 0
-      },
-      headerLeft: (Platform.OS === 'android' && <View/>),
-      headerRight: (Platform.OS === 'android' && <View/>),
-      headerTintColor: '#ffffff'
-    }
-  }),
   Settings: createStackNavigator(
   { SettingsRoot: SettingsScreen },
   {
@@ -127,9 +108,6 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
           break;
         case 'Vote':
           iconElement = (<FontAwesome name='legal' color={tintColor} size={22} />);
-          break;
-        case 'Recipients':
-          iconElement = (<FontAwesome name='address-book' color={tintColor} size={22} />);
           break;
         case 'Settings':
           iconElement = (<FontAwesome name='cogs' color={tintColor} size={22} />);
@@ -168,7 +146,7 @@ const MainNavigator = createStackNavigator(
   Send: NavigationHelper.createSingleScreenNavigator({ SendRoot: SendScreen })
 },
 {
-  initialRouteName: 'MainRoot',
+  initialRouteName: 'Send',
   headerMode: 'none',
   mode: 'modal',
   navigationOptions: {

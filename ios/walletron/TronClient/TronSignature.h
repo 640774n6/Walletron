@@ -17,6 +17,7 @@
     BOOL _valid;
     BOOL _fromWords;
 }
++ (BOOL) validatePublicKey: (NSString *) publicKey;
 + (NSString *) generateNewMnemonics;
 + (id) signatureWithMnemonics: (NSString *) mnemonics
                        secret: (NSString *) secret;

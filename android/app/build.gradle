@@ -118,6 +118,7 @@ android {
 apply from: 'expo.gradle'
 
 dependencies {
+    compile project(':react-native-text-input-mask')
   compile fileTree(dir: 'libs', include: ['*.jar'])
 
   compile 'com.android.support:multidex:1.0.1'

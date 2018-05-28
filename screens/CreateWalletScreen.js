@@ -30,7 +30,6 @@ export default class CreateWalletScreen extends React.Component
     console.log(restoredAccount.address);
     console.log(restoredAccount.privateKey);
     console.log(restoredAccount.mnemonics);
-
     const ownerPrivateKey = '7BE5272664163BFDE05D0148769EFDA7279C6CD4B997288DAA99965639D09481';
     var sendResult = await tronClient.send(ownerPrivateKey, restoredAccount.address, 1);
     console.log("SEND SUCCESS: " + sendResult);

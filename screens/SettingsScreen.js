@@ -83,7 +83,7 @@ export default class SettingsScreen extends React.Component
             renderSectionHeader={ this.renderSettingHeaderItem }
             renderItem={ this.renderSettingListItem }
             sections={ this.state.settings }
-            keyExtractor={(item, index) => item + index}/>
+            keyExtractor={(item, index) => index}/>
         </ScrollView>
       </SafeAreaView>
     );

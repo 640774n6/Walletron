@@ -46,8 +46,22 @@ import java.lang.*;
 
 public class TronClientModule extends ReactContextBaseJavaModule
 {
-  private static final String HOST_ADDRESS = "47.254.16.55:50051";
+  /*
+  "47.254.18.49:50051",
+  "18.188.111.53:50051",
+  "54.219.41.56:50051",
+  "35.169.113.187:50051",
+  "34.214.241.188:50051",
+  "47.254.146.147:50051",
+  "47.254.144.25:50051",
+  "47.91.246.252:50051",
+  "47.91.216.69:50051",
+  "39.106.220.120:50051"
+  */
+  private static final String HOST_ADDRESS = "52.14.86.232:50051";
   private static final int TRX_DROP = 1000000;
+  private static final int DECODED_PUBKEY_LENGTH = 21;
+  private static final int DECODED_PREFIX_BYTE = 0xa0;
 
   private final ReactApplicationContext reactContext;
 
@@ -101,7 +115,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
     return Base58.encode(inputCheck);
   }
 
-  private boolean _broadcastTransaction(Transaction signaturedTransaction)
+  private GrpcAPI.Return _broadcastTransaction(Transaction signaturedTransaction)
   {
     int i = 10;
     GrpcAPI.Return response = blockingStubFull.broadcastTransaction(signaturedTransaction);
@@ -113,7 +127,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
       { Thread.sleep(300); }
       catch (InterruptedException e) { }
     }
-    return response.getResult();
+    return response;
   }
 
   @ReactMethod
@@ -123,40 +137,48 @@ public class TronClientModule extends ReactContextBaseJavaModule
     {
       public void run()
       {
-        //Create mnemonics
-        final StringBuilder sb = new StringBuilder();
-        byte[] entropy = new byte[Words.TWELVE.byteLength()];
-        new SecureRandom().nextBytes(entropy);
-        new MnemonicGenerator(English.INSTANCE)
-        .createMnemonic(entropy, new MnemonicGenerator.Target()
+        try
         {
-          @Override
-          public void append(final CharSequence string)
-          { sb.append(string); }
-        });
+          //Create mnemonics
+          final StringBuilder sb = new StringBuilder();
+          byte[] entropy = new byte[Words.TWELVE.byteLength()];
+          new SecureRandom().nextBytes(entropy);
+          new MnemonicGenerator(English.INSTANCE)
+          .createMnemonic(entropy, new MnemonicGenerator.Target()
+          {
+            @Override
+            public void append(final CharSequence string)
+            { sb.append(string); }
+          });
 
-        //Create ECKey from mnemonics seed
-        String mnemonics = sb.toString();
-        byte[] mnemonicSeedBytes = new SeedCalculator().calculateSeed(mnemonics, password);
-        byte[] seedBytes = Arrays.copyOfRange(mnemonicSeedBytes, 0, 32);
-        ECKey key = ECKey.fromPrivate(seedBytes);
+          //Create ECKey from mnemonics seed
+          String mnemonics = sb.toString();
+          byte[] mnemonicSeedBytes = new SeedCalculator().calculateSeed(mnemonics, password);
+          byte[] seedBytes = Arrays.copyOfRange(mnemonicSeedBytes, 0, 32);
+          ECKey key = ECKey.fromPrivate(seedBytes);
 
-        //Get public address
-        byte[] addressBytes = key.getAddress();
-        String address = _encode58Check(addressBytes);
+          //Get public address
+          byte[] addressBytes = key.getAddress();
+          String address = _encode58Check(addressBytes);
 
-        //Get private key
-        byte[] privateKeyBytes = key.getPrivKeyBytes();
-        String privateKey = ByteArray.toHexString(privateKeyBytes).toUpperCase();
+          //Get private key
+          byte[] privateKeyBytes = key.getPrivKeyBytes();
+          String privateKey = ByteArray.toHexString(privateKeyBytes).toUpperCase();
 
-        //Create generated account map
-        WritableMap returnGeneratedAccount = Arguments.createMap();
-        returnGeneratedAccount.putString("address", address);
-        returnGeneratedAccount.putString("privateKey", privateKey);
-        returnGeneratedAccount.putString("mnemonics", mnemonics);
+          //Create generated account map
+          WritableMap returnGeneratedAccount = Arguments.createMap();
+          returnGeneratedAccount.putString("address", address);
+          returnGeneratedAccount.putString("privateKey", privateKey);
+          returnGeneratedAccount.putString("mnemonics", mnemonics);
 
-        //Return generated account map
-        promise.resolve(returnGeneratedAccount);
+          //Return generated account map
+          promise.resolve(returnGeneratedAccount);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to generate account", "Native exception thrown", e);
+        }
       }
     }).start();
   }
@@ -168,41 +190,62 @@ public class TronClientModule extends ReactContextBaseJavaModule
     {
       public void run()
       {
-        //Verify mnemonics are valid
         try
         {
+          //Verify mnemonics are valid
           MnemonicValidator
             .ofWordList(English.INSTANCE)
             .validate(mnemonics);
+
+          //Create ECKey from mnemonics seed
+          byte[] mnemonicSeedBytes = new SeedCalculator().calculateSeed(mnemonics, password);
+          byte[] seedBytes = Arrays.copyOfRange(mnemonicSeedBytes, 0, 32);
+          ECKey key = ECKey.fromPrivate(seedBytes);
+
+          //Get public address
+          byte[] addressBytes = key.getAddress();
+          String address = _encode58Check(addressBytes);
+
+          //Get private key
+          byte[] privateKeyBytes = key.getPrivKeyBytes();
+          String privateKey = ByteArray.toHexString(privateKeyBytes).toUpperCase();
+
+          //Create restored account map
+          WritableMap returnRestoredAccount = Arguments.createMap();
+          returnRestoredAccount.putString("address", address);
+          returnRestoredAccount.putString("privateKey", privateKey);
+          returnRestoredAccount.putString("mnemonics", mnemonics);
+
+          //Return restored account map
+          promise.resolve(returnRestoredAccount);
         }
         catch(Exception e)
         {
-          //Mnemonics are invalid, reject and return
-          promise.reject("Failed to restore account", "Mnemonics invalid", null);
-          return;
+          //Exception, reject
+          promise.reject("Failed to restore account", "Native exception thrown", e);
         }
+      }
+    }).start();
+  }
 
-        //Create ECKey from mnemonics seed
-        byte[] mnemonicSeedBytes = new SeedCalculator().calculateSeed(mnemonics, password);
-        byte[] seedBytes = Arrays.copyOfRange(mnemonicSeedBytes, 0, 32);
-        ECKey key = ECKey.fromPrivate(seedBytes);
-
-        //Get public address
-        byte[] addressBytes = key.getAddress();
-        String address = _encode58Check(addressBytes);
-
-        //Get private key
-        byte[] privateKeyBytes = key.getPrivKeyBytes();
-        String privateKey = ByteArray.toHexString(privateKeyBytes).toUpperCase();
-
-        //Create restored account map
-        WritableMap returnRestoredAccount = Arguments.createMap();
-        returnRestoredAccount.putString("address", address);
-        returnRestoredAccount.putString("privateKey", privateKey);
-        returnRestoredAccount.putString("mnemonics", mnemonics);
-
-        //Return restored account map
-        promise.resolve(returnRestoredAccount);
+  @ReactMethod
+  public void validateAddress(final String accountAddress, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          byte[] decodedAddress = _decode58Check(accountAddress);
+          int prefixByteValue = decodedAddress[0] & 0xFF;
+          boolean addressIsValid = (decodedAddress != null &&
+                                    decodedAddress.length == DECODED_PUBKEY_LENGTH &&
+                                    prefixByteValue == DECODED_PREFIX_BYTE);
+          promise.resolve(addressIsValid);
+        }
+        catch(Exception e)
+        { promise.resolve(false); }
       }
     }).start();
   }
@@ -214,40 +257,48 @@ public class TronClientModule extends ReactContextBaseJavaModule
     {
       public void run()
       {
-        //Decode base58 address
-        byte[] decodedAddress = _decode58Check(accountAddress);
-        ByteString addressBS = ByteString.copyFrom(decodedAddress);
-
-        //Attempt to get account using decoded address
-        Account requestAccount = Account.newBuilder().setAddress(addressBS).build();
-        Account responseAccount = blockingStubFull.getAccount(requestAccount);
-        if(responseAccount == null)
+        try
         {
-          //No response, reject and return
-          promise.reject("Failed to get account", "No response from host", null);
-          return;
-        }
+          //Decode base58 address
+          byte[] decodedAddress = _decode58Check(accountAddress);
+          ByteString addressBS = ByteString.copyFrom(decodedAddress);
 
-        //Parse tokens
-        Map<String, Long> responseAssetMap = responseAccount.getAssetMap();
-        WritableArray returnAssets = Arguments.createArray();
-        for (Map.Entry<String, Long> asset : responseAssetMap.entrySet())
+          //Attempt to get account using decoded address
+          Account requestAccount = Account.newBuilder().setAddress(addressBS).build();
+          Account responseAccount = blockingStubFull.getAccount(requestAccount);
+          if(responseAccount == null)
+          {
+            //No response, reject and return
+            promise.reject("Failed to get account", "No response from host", null);
+            return;
+          }
+
+          //Parse tokens
+          Map<String, Long> responseAssetMap = responseAccount.getAssetMap();
+          WritableArray returnAssets = Arguments.createArray();
+          for (Map.Entry<String, Long> asset : responseAssetMap.entrySet())
+          {
+            WritableMap assetMap = Arguments.createMap();
+            assetMap.putString("name", asset.getKey());
+            assetMap.putDouble("balance", (double)asset.getValue());
+            returnAssets.pushMap(assetMap);
+          }
+
+          //Create account map
+          WritableMap returnAccountMap = Arguments.createMap();
+          returnAccountMap.putString("address", accountAddress);
+          returnAccountMap.putString("name", responseAccount.getAccountName().toStringUtf8());
+          returnAccountMap.putDouble("balance", (responseAccount.getBalance() / TRX_DROP));
+          returnAccountMap.putArray("assets", returnAssets);
+
+          //Return account map
+          promise.resolve(returnAccountMap);
+        }
+        catch(Exception e)
         {
-          WritableMap assetMap = Arguments.createMap();
-          assetMap.putString("name", asset.getKey());
-          assetMap.putDouble("balance", (double)asset.getValue());
-          returnAssets.pushMap(assetMap);
+          //Exception, reject
+          promise.reject("Failed to get account", "Native exception thrown", e);
         }
-
-        //Create account map
-        WritableMap returnAccountMap = Arguments.createMap();
-        returnAccountMap.putString("address", accountAddress);
-        returnAccountMap.putString("name", responseAccount.getAccountName().toStringUtf8());
-        returnAccountMap.putDouble("balance", (responseAccount.getBalance() / TRX_DROP));
-        returnAccountMap.putArray("assets", returnAssets);
-
-        //Return account map
-        promise.resolve(returnAccountMap);
       }
     }).start();
   }
@@ -259,42 +310,55 @@ public class TronClientModule extends ReactContextBaseJavaModule
     {
       public void run()
       {
-        //Get key
-        byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
-        ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
-
-        //Get data for contract
-        byte[] ownerAddressBytes = ownerKey.getAddress();
-        ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
-        byte[] decodedToAddress = _decode58Check(toAddress);
-        ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
-
-        //Create transfer contract
-        Contract.TransferContract transferContract = Contract.TransferContract
-          .newBuilder()
-          .setOwnerAddress(ownerAddressBS)
-          .setToAddress(toAddressBS)
-          .setAmount(amount * TRX_DROP)
-          .build();
-
-        //Attempt to create the transaction using the transfer contract
-        Transaction transaction = blockingStubFull.createTransaction(transferContract);
-        if(transaction == null || transaction.getRawData().getContractCount() == 0)
+        try
         {
-          //Problem creating transaction, reject and return
-          promise.reject("Failed to send", "No/bad response from host", null);
-          return;
+          //Get key
+          byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+          ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+          //Get data for contract
+          byte[] ownerAddressBytes = ownerKey.getAddress();
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+          byte[] decodedToAddress = _decode58Check(toAddress);
+          ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
+
+          //Create transfer contract
+          Contract.TransferContract transferContract = Contract.TransferContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .setToAddress(toAddressBS)
+            .setAmount(amount * TRX_DROP)
+            .build();
+
+          //Attempt to create the transaction using the transfer contract
+          Transaction transaction = blockingStubFull.createTransaction(transferContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to send", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Set timestamp and sign transaction
+          transaction = TransactionUtils.setTimestamp(transaction);
+          transaction = TransactionUtils.sign(transaction, ownerKey);
+
+          //Attempt to broadcast the transaction
+          GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
+          if(broadcastResponse == null)
+          {
+            promise.reject("Failed to send", "No/bad resppnse from host for broadcast transaction", null);
+            return;
+          }
+
+          //Return result
+          promise.resolve(broadcastResponse.getCodeValue());
         }
-
-        //Set timestamp and sign transaction
-        transaction = TransactionUtils.setTimestamp(transaction);
-        transaction = TransactionUtils.sign(transaction, ownerKey);
-
-        //Attempt to broadcast the transaction
-        boolean returnResult = _broadcastTransaction(transaction);
-
-        //Return result
-        promise.resolve(returnResult);
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to send", "Native exception thrown", e);
+        }
       }
     }).start();
   }
@@ -306,45 +370,58 @@ public class TronClientModule extends ReactContextBaseJavaModule
     {
       public void run()
       {
-        //Get key
-        byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
-        ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
-
-        //Get data for contract
-        byte[] ownerAddressBytes = ownerKey.getAddress();
-        ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
-        byte[] decodedToAddress = _decode58Check(toAddress);
-        ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
-        byte[] assetNameBytes = assetName.getBytes();
-        ByteString assetNameBS = ByteString.copyFrom(assetNameBytes);
-
-        //Create transfer asset contract
-        Contract.TransferAssetContract transferAssetContract = Contract.TransferAssetContract
-          .newBuilder()
-          .setOwnerAddress(ownerAddressBS)
-          .setToAddress(toAddressBS)
-          .setAssetName(assetNameBS)
-          .setAmount(amount)
-          .build();
-
-        //Attempt to create the transaction using the transfer asset contract
-        Transaction transaction = blockingStubFull.transferAsset(transferAssetContract);
-        if(transaction == null || transaction.getRawData().getContractCount() == 0)
+        try
         {
-          //Problem creating transaction, reject and return
-          promise.reject("Failed to send", "No/bad response from host", null);
-          return;
+          //Get key
+          byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+          ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+          //Get data for contract
+          byte[] ownerAddressBytes = ownerKey.getAddress();
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+          byte[] decodedToAddress = _decode58Check(toAddress);
+          ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
+          byte[] assetNameBytes = assetName.getBytes();
+          ByteString assetNameBS = ByteString.copyFrom(assetNameBytes);
+
+          //Create transfer asset contract
+          Contract.TransferAssetContract transferAssetContract = Contract.TransferAssetContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .setToAddress(toAddressBS)
+            .setAssetName(assetNameBS)
+            .setAmount(amount)
+            .build();
+
+          //Attempt to create the transaction using the transfer asset contract
+          Transaction transaction = blockingStubFull.transferAsset(transferAssetContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to send token", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Set timestamp and sign transaction
+          transaction = TransactionUtils.setTimestamp(transaction);
+          transaction = TransactionUtils.sign(transaction, ownerKey);
+
+          //Attempt to broadcast the transaction
+          GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
+          if(broadcastResponse == null)
+          {
+            promise.reject("Failed to send token", "No/bad resppnse from host for broadcast transaction", null);
+            return;
+          }
+
+          //Return result
+          promise.resolve(broadcastResponse.getCodeValue());
         }
-
-        //Set timestamp and sign transaction
-        transaction = TransactionUtils.setTimestamp(transaction);
-        transaction = TransactionUtils.sign(transaction, ownerKey);
-
-        //Attempt to broadcast the transaction
-        boolean returnResult = _broadcastTransaction(transaction);
-
-        //Return result
-        promise.resolve(returnResult);
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to send token", "Native exception thrown", e);
+        }
       }
     }).start();
   }

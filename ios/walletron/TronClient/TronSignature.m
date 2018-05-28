@@ -14,16 +14,27 @@
 
 size_t const kTronSignatureMnemonicStrength = 128;
 size_t const kTronSignatureSeedSize = 64;
+size_t const kTronSignaturePublicKeySize = 21;
 size_t const kTronSignaturePublicKeyHashSize = 20;
 size_t const kTronSignaturePrivateKeyLength = 32;
 size_t const kTronSignatureHashLength = 32;
 size_t const kTronSignatureDataSignatureLength = 65;
+uint8_t const kTronSignaturePrefixByte = 0xa0;
 
 @implementation TronSignature
 
 #pragma mark -
 #pragma mark Class Methods
 #pragma mark
+
++ (BOOL) validatePublicKey: (NSString *) publicKey
+{
+    NSData *decodedBase58Data = [publicKey decodedBase58Data];
+    uint8_t *decodedBase58Bytes = (uint8_t *)[decodedBase58Data bytes];
+    return (decodedBase58Data != nil &&
+            decodedBase58Data.length == kTronSignaturePublicKeySize &&
+            decodedBase58Bytes[0] == kTronSignaturePrefixByte);
+}
 
 + (NSString *) generateNewMnemonics
 {
@@ -128,7 +139,7 @@ size_t const kTronSignatureDataSignatureLength = 65;
     
     //Get public address from seed
     memcpy(addr + 1, publicKeyHash, kTronSignaturePublicKeyHashSize);
-    addr[0] = 0xa0;
+    addr[0] = kTronSignaturePrefixByte;
     NSData *addressData = [NSData dataWithBytes: &addr length: kTronSignaturePublicKeyHashSize + 1];
     _address = [NSString encodedBase58StringWithData: addressData];
     
@@ -161,7 +172,7 @@ size_t const kTronSignatureDataSignatureLength = 65;
     
     //Get public address
     memcpy(addr + 1, publicKeyHash, kTronSignaturePublicKeyHashSize);
-    addr[0] = 0xa0;
+    addr[0] = kTronSignaturePrefixByte;
     NSData *addressData = [NSData dataWithBytes: &addr length: kTronSignaturePublicKeyHashSize + 1];
     _address = [NSString encodedBase58StringWithData: addressData];
     

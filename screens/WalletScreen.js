@@ -21,23 +21,23 @@ const SECTIONS = [{
     type: 'material-community',
     color: '#000000'
   },
-  empty: {
-    title: 'You have no tokens',
-    message: 'Create or buy using the token menu'
+  content: {
+    noneTitle: 'You have no tokens',
+    noneMessage: 'Create a new token or participate using the token menu on the right.'
   },
   data: []
 },
 {
   key: 1,
-  title: 'Freezer',
+  title: 'Power',
   icon: {
-    name: 'snowflake-o',
+    name: 'bolt',
     type: 'font-awesome',
     color: '#000000'
   },
-  empty: {
-    title: 'You have no frozen balances',
-    message: 'Freeze balances using the freezer menu'
+  content: {
+    noneTitle: 'You have no power',
+    noneMessage: 'Freeze balances to gain power using the power menu on the right.'
   },
   data: []
 }];
@@ -198,8 +198,8 @@ export default class WalletScreen extends React.Component {
           marginRight: 10,
           marginBottom: section.key === this.state.sections.length - 1 ? 10 : null,
         }}>
-          <Text style={{ fontSize: 16, color: '#000000', marginBottom: 5 }}>{ section.empty.title }</Text>
-          <Text style={{ fontSize: 14, color: '#777777' }}>{ section.empty.message }</Text>
+          <Text style={{ fontSize: 16, color: '#000000', marginBottom: 5 }}>{ section.content.noneTitle }</Text>
+          <Text style={{ fontSize: 14, color: '#777777' }}>{ section.content.noneMessage }</Text>
         </View>
       );
     }
@@ -215,7 +215,7 @@ export default class WalletScreen extends React.Component {
         titleStyle={{ color: '#000000', fontSize: 16 }}
         leftAvatar={{ rounded: true, title: item.name.toUpperCase().charAt(0) }}
         rightTitle={ item.balance.toString() }
-        rightTitleStyle={{ color: '#000000', fontSize: 18 }}
+        rightTitleStyle={{ color: '#000000', fontSize: 16 }}
         hideChevron
         containerStyle={{
           borderTopLeftRadius: index === 0 ? 8 : null,
