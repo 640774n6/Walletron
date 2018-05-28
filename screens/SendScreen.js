@@ -6,7 +6,8 @@ import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Foundation 
 import ModalDropdown from 'react-native-modal-dropdown';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import TextInputMask from 'react-native-text-input-mask';
-import {BigNumber} from 'bignumber.js';
+
+import TronWalletService from '../libs/TronWalletService.js';
 
 export default class SendScreen extends React.Component
 {
@@ -65,9 +66,15 @@ export default class SendScreen extends React.Component
     this.setState({ recipient: newRecipient });
   }
 
+  onAmountChanged(formatted, extracted) {
+    var newAmount = parseFloat(formatted);
+    this.setState({ amount: newAmount });
+  }
+
   async onPasteAddress() {
     var pasteAddress = await Clipboard.getString();
-    this.recipientAddressTextInput.props.onChangeText(pasteAddress);
+    this.recipientAddressTextInput.setNativeProps({ text: pasteAddress });
+    this.onRecipientAddressChanged(pasteAddress);
   }
 
   async onShouldScanAddress() {
@@ -77,26 +84,48 @@ export default class SendScreen extends React.Component
     this.props.navigation.navigate({ routeName: 'ScanAddress', params: params });
   }
 
-  onAmountChanged(formatted, extracted) {
-    var newAmount = parseFloat(formatted);
-    this.setState({ amount: newAmount });
+  onAddressScanned(address) {
+    this.recipientAddressTextInput.setNativeProps({ text: address });
+    this.onRecipientAddressChanged(address);
   }
 
-  onAddressScanned(address) {
-    this.recipientAddressTextInput.props.onChangeText(address);
+  onSendPress() {
+    this.props.navigation.navigate('ConfirmSend');
   }
 
   constructor()
   {
     super();
-    this.state = {
-      token: { name: 'TRX', balance: 10.032 },
+
+    var initState = {
+      token: null,
+      tokens: null,
       recipient: {
         address: null,
         valid: false
       },
       amount: 0.0
+    };
+
+    var currentWallet = TronWalletService.getCurrentWallet();
+    if(currentWallet)
+    {
+      var tokens = [{ name: 'TRX', balance: currentWallet.balance }];
+      currentWallet.assets.forEach(asset => {
+        tokens.push({
+          name: asset.name,
+          balance: parseFloat(asset.balance)
+        });
+      });
+
+      if(tokens.length > 0)
+      {
+        initState.tokens = tokens;
+        initState.token = tokens[0];
+      }
     }
+
+    this.state = initState;
   }
 
   render()
@@ -110,10 +139,7 @@ export default class SendScreen extends React.Component
           }}
           enableOnAndroid={true}>
           <ModalDropdown
-            options={[
-              { name: 'TRX', balance: 10.032 },
-              { name: 'Eureka', balance: 4 }
-            ]}
+            options={ this.state.tokens }
             animated={false}
             showsVerticalScrollIndicator={true}
             onSelect={ this.onSelectTokenDropDown.bind(this) }
@@ -200,8 +226,7 @@ export default class SendScreen extends React.Component
               autoCapitalize='none'
               underlineColorAndroid='transparent'
               placeholder='Tron address'
-              onChangeText={ (text) => this.onRecipientAddressChanged.bind(this)(text) }
-              value={ this.state.recipient.address }/>
+              onChangeText={ (text) => this.onRecipientAddressChanged.bind(this)(text) }/>
           </View>
           <View style={{
             backgroundColor: '#ffffff',
@@ -247,10 +272,10 @@ export default class SendScreen extends React.Component
               keyboardType='numeric'
               placeholder={ `Amount of ${this.state.token.name} to send` }
               mask='[09999999999].[9999]'
-              onChangeText={ this.onAmountChanged.bind(this) }
-              value={ this.state.amount }/>
+              onChangeText={ this.onAmountChanged.bind(this) }/>
           </View>
           <Button
+            onPress={ this.onSendPress.bind(this) }
             disabled={ (!this.state.recipient.valid ||
                         !this.state.amount ||
                         this.state.amount > this.state.token.balance) }
@@ -266,7 +291,6 @@ export default class SendScreen extends React.Component
               borderRadius: 8,
               overflow: 'hidden'
             }}
-            touchableComponent={(<TouchableOpacity/>)}
             title='Send'
             icon={{
               name: 'send',

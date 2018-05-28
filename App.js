@@ -2,11 +2,14 @@ import React from 'react';
 import { createStackNavigator, createSwitchNavigator, createBottomTabNavigator } from 'react-navigation';
 import { Platform, View } from 'react-native';
 import { FontAwesome, Entypo } from '@expo/vector-icons';
+import { AppLoading } from 'expo';
 
+import TronWalletService from './libs/TronWalletService.js';
 import NavigationHelper from './libs/NavigationHelper.js';
 
 import ReceiveScreen from './screens/ReceiveScreen.js';
 import SendScreen from './screens/SendScreen.js';
+import ConfirmSendScreen from './screens/ConfirmSendScreen.js';
 import ScanAddressScreen from './screens/ScanAddressScreen.js';
 import CreateWalletScreen from './screens/CreateWalletScreen.js';
 import ImportWalletScreen from './screens/ImportWalletScreen.js';
@@ -85,7 +88,7 @@ const StartNavigator = createStackNavigator(
 const MainNavigator = createStackNavigator(
 {
   MainRoot: MainScreenBottomTabNavigator,
-  Send: createStackNavigator({ SendRoot: SendScreen }, { initialRouteName: 'SendRoot', navigationOptions: defaultStackNavigationOptions }),
+  Send: createStackNavigator({ SendRoot: SendScreen, ConfirmSend: ConfirmSendScreen }, { initialRouteName: 'SendRoot', navigationOptions: defaultStackNavigationOptions }),
   Receive: createStackNavigator({ ReceiveRoot: ReceiveScreen }, { initialRouteName: 'ReceiveRoot', navigationOptions: defaultStackNavigationOptions }),
   ScanAddress: createStackNavigator({ ScanAddressRoot: ScanAddressScreen }, { initialRouteName: 'ScanAddressRoot', navigationOptions: defaultStackNavigationOptions })
 },
@@ -105,13 +108,43 @@ const RootNavigator = createSwitchNavigator(
   Main: MainNavigator
 },
 {
-  initialRouteName: 'Start',
+  initialRouteName: 'Main',
 });
 
 export default class App extends React.Component
 {
+  constructor()
+  {
+    super();
+    this.state = { loading: true };
+  }
+
+  async componentDidMount()
+  {
+    await TronWalletService.load();
+    var wallet = TronWalletService.getCurrentWallet();
+    if(!wallet)
+    {
+      wallet = {
+        name: 'Brando Wallet',
+        address: '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW',
+        privateKey: '7BE5272664163BFDE05D0148769EFDA7279C6CD4B997288DAA99965639D09481',
+        balance: 0.0,
+        assets: [],
+        timestamp: null
+      }
+      TronWalletService.addWallet(wallet);
+      TronWalletService.setCurrentWalletByName(wallet.name);
+      await TronWalletService.save();
+    }
+    this.setState({ loading: false });
+  }
+
   render()
   {
+    if(this.state.loading)
+    { return (<AppLoading/>); }
+
     return (<RootNavigator/>);
   }
 }

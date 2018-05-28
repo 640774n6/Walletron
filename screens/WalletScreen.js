@@ -5,13 +5,12 @@ import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@exp
 import { LinearGradient, BarCodeScanner, Permissions } from 'expo';
 import ModalDropdown from 'react-native-modal-dropdown';
 
-import NavigationHelper from '../libs/NavigationHelper.js';
+import TronWalletService from '../libs/TronWalletService.js';
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
 
 const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
-const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
 
 const SECTIONS = [{
   key: 0,
@@ -44,43 +43,39 @@ const SECTIONS = [{
 
 export default class WalletScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
+    var currentWallet = TronWalletService.getCurrentWallet();
     return {
       title: 'Wallet',
       headerLeft: (
-        <ModalDropdown
-          options={[
-            { name: 'Master Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS },
-            { name: 'Test Wallet', address: TEST_WALLET_ADDRESS }
-          ]}
-          animated={false}
-          showsVerticalScrollIndicator={true}
-          adjustFrame={ WalletScreen.adjustFrameWalletDropDown.bind(this) }
-          renderRow={ WalletScreen.renderWalletDropDownRow.bind(this) }
-          dropdownStyle={{
-            borderWidth: 0,
-            borderRadius: 8,
-            overflow: 'hidden'
-          }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
-            <BlockieSvg
-              size={16}
-              scale={1.5}
-              seed={TEST_WALLET_ADDRESS}
-              containerStyle={{
-                overflow: 'hidden',
-                borderRadius: 3
-            }}/>
-            <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
-          </View>
-        </ModalDropdown>
+        <View>
+          { currentWallet &&
+          <ModalDropdown
+            options={[
+              { name: 'Lock' },
+              { name: 'Change Wallet...' }
+            ]}
+            animated={false}
+            showsVerticalScrollIndicator={true}
+            adjustFrame={ WalletScreen.adjustFrameWalletDropDown.bind(this) }
+            renderRow={ WalletScreen.renderWalletDropDownRow.bind(this) }
+            dropdownStyle={{
+              borderWidth: 0,
+              borderRadius: 8,
+              overflow: 'hidden'
+            }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
+              <BlockieSvg
+                size={16}
+                scale={1.5}
+                seed={ currentWallet.address }
+                containerStyle={{
+                  overflow: 'hidden',
+                  borderRadius: 3
+              }}/>
+              <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
+            </View>
+          </ModalDropdown>}
+        </View>
       ),
       headerRight: (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
@@ -121,44 +116,80 @@ export default class WalletScreen extends React.Component {
   {
     super();
 
-    this.state = {
+    var initState = {
+      address: '',
+      name: '',
       balance: 0.0,
       value: 0.0,
-      sections: SECTIONS,
-      loaded: false
+      sections: SECTIONS
     }
 
+    var currentWallet = TronWalletService.getCurrentWallet();
+    if(currentWallet)
+    {
+      var sections = initState.sections;
+      var tokenData = currentWallet.assets.map(asset => {
+        return {
+          name: asset.name,
+          balance: parseFloat(asset.balance)
+        };
+      });
+      sections[0].data = tokenData;
+
+      initState.address = currentWallet.address;
+      initState.name = currentWallet.name;
+      initState.balance = parseFloat(currentWallet.balance),
+      initState.sections = sections;
+    }
+
+    this.state = initState;
     this.scrollYAnimatedValue = new Animated.Value(0);
   }
 
-  async reloadData() {
+  async updateCurrentPriceValue()
+  {
     const cryptoCompare = require('cryptocompare');
     var priceData = await cryptoCompare.price('TRX', 'CAD');
-    var trxValue = parseFloat(priceData['CAD']);
+    if(priceData)
+    {
+      var trxValue = parseFloat(priceData['CAD']);
+      this.setState({ value: trxValue });
+    }
+  }
 
-    const tronClient = NativeModules.TronClient;
-    var account = await tronClient.getAccount(TEST_WALLET_ADDRESS);
-    var trxBalance = parseFloat(account.balance);
-    //for(var i = 0; i < 100; i++)
-    //{ account.assets.push(account.assets[0]); }
+  async updateCurrentWallet() {
+    var updated = await TronWalletService.updateCurrentWallet();
+    if(updated)
+    {
+      var currentWallet = TronWalletService.getCurrentWallet();
+      if(currentWallet)
+      {
+        var sections = this.state.sections;
+        var tokenData = currentWallet.assets.map(asset => {
+          return {
+            name: asset.name,
+            balance: parseFloat(asset.balance)
+          };
+        });
+        sections[0].data = tokenData;
 
-    var sections = this.state.sections;
-    sections[0].data = account.assets;
-
-    this.setState({
-      balance: trxBalance,
-      value: trxValue,
-      sections: sections,
-      loaded: true });
+        this.setState({
+          address: currentWallet.address,
+          name: currentWallet.name,
+          balance: parseFloat(currentWallet.balance),
+          sections: sections
+        });
+      }
+    }
   }
 
   refresh() {
-    this.reloadData();
-    this.setState({ loaded: false });
+    this.updateCurrentPriceValue();
+    this.updateCurrentWallet();
   }
 
   componentDidMount() {
-    this.reloadData();
+    this.refresh();
   }
 
   scrollToTop()
@@ -298,8 +329,12 @@ export default class WalletScreen extends React.Component {
               bottom: 15,
               left: 15,
               right: 15}}>
-              <Text style={{ color: '#ffffff', fontSize: 22 }}>{ this.state.balance.toFixed(3) } TRX</Text>
-              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>(${ (this.state.balance * this.state.value).toFixed(2) })</Text>
+              <Text style={{ color: '#ffffff', fontSize: 22 }}>
+                { this.state.balance.toFixed(3) } TRX
+              </Text>
+              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>
+                (${ (this.state.balance * this.state.value).toFixed(2) })
+              </Text>
             </Animated.View>
             <Animated.View
               style={{
@@ -326,8 +361,12 @@ export default class WalletScreen extends React.Component {
                     strokeColor='#ca2b1e'
                     strokeWidth='6'/>
                   <View>
-                    <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>{ this.state.balance.toFixed(3) } TRX</Text>
-                    <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>(${ (this.state.balance * this.state.value).toFixed(2) })</Text>
+                    <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>
+                      { this.state.balance.toFixed(3) } TRX
+                    </Text>
+                    <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>
+                      (${ (this.state.balance * this.state.value).toFixed(2) })
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
