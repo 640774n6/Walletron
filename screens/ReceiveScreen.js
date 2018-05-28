@@ -14,14 +14,14 @@ export default class ReceiveScreen extends React.Component
   static navigationOptions = ({ navigation }) => {
     return {
       title: 'Receive',
-      headerLeft: (
+      headerRight: (
         <TouchableOpacity onPress={ () => Share.share({ title: 'Master Wallet', message: TEST_WALLET_ADDRESS }) }>
-          <Entypo name='share-alternative' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>
+          <Entypo name='share-alternative' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
         </TouchableOpacity>
       ),
-      headerRight: (
+      headerLeft: (
         <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
-          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
+          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>
         </TouchableOpacity>
       )
     };

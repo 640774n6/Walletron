@@ -17,81 +17,23 @@ import TransactionsScreen from './screens/TransactionsScreen.js';
 import VoteScreen from './screens/VoteScreen.js';
 import SettingsScreen from './screens/SettingsScreen.js';
 
+const defaultStackNavigationOptions = {
+  headerTitleStyle: { flex: 1, textAlign: 'center' },
+  headerStyle: {
+    backgroundColor: '#333333',
+    borderBottomWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0
+  },
+  headerTintColor: '#ffffff'
+}
+
 const MainScreenBottomTabNavigator = createBottomTabNavigator(
 {
-  Wallet: createStackNavigator(
-  { WalletRoot: WalletScreen },
-  {
-    initialRouteName: 'WalletRoot',
-    navigationOptions:
-    {
-      headerTitleStyle: { flex: 1, textAlign: 'center' },
-      headerStyle: {
-        backgroundColor: '#333333',
-        borderBottomWidth: 0,
-        shadowOpacity: 0,
-        elevation: 0
-      },
-      headerLeft: (Platform.OS === 'android' && <View/>),
-      headerRight: (Platform.OS === 'android' && <View/>),
-      headerTintColor: '#ffffff'
-    }
-  }),
-  Transactions: createStackNavigator(
-  { TransactionsRoot: TransactionsScreen },
-  {
-    initialRouteName: 'TransactionsRoot',
-    navigationOptions:
-    {
-      headerTitleStyle: { flex: 1, textAlign: 'center' },
-      headerStyle: {
-        backgroundColor: '#333333',
-        borderBottomWidth: 0,
-        shadowOpacity: 0,
-        elevation: 0
-      },
-      headerLeft: (Platform.OS === 'android' && <View/>),
-      headerRight: (Platform.OS === 'android' && <View/>),
-      headerTintColor: '#ffffff'
-    }
-  }),
-  Vote: createStackNavigator(
-  { VoteRoot: VoteScreen },
-  {
-    initialRouteName: 'VoteRoot',
-    navigationOptions:
-    {
-      headerTitleStyle: { flex: 1, textAlign: 'center' },
-      headerStyle: {
-        backgroundColor: '#333333',
-        borderBottomWidth: 0,
-        shadowOpacity: 0,
-        elevation: 0
-      },
-      headerLeft: (Platform.OS === 'android' && <View/>),
-      headerRight: (Platform.OS === 'android' && <View/>),
-      headerTintColor: '#ffffff'
-    }
-  }),
-  Settings: createStackNavigator(
-  { SettingsRoot: SettingsScreen },
-  {
-    initialRouteName: 'SettingsRoot',
-    navigationOptions:
-    {
-      headerTitleStyle: { flex: 1, textAlign: 'center' },
-      headerStyle:
-      {
-        backgroundColor: '#333333',
-        borderBottomWidth: 0,
-        shadowOpacity: 0,
-        elevation: 0
-      },
-      headerLeft: (Platform.OS === 'android' && <View/>),
-      headerRight: (Platform.OS === 'android' && <View/>),
-      headerTintColor: '#ffffff'
-    }
-  })
+  Wallet: createStackNavigator({ WalletRoot: WalletScreen }, { initialRouteName: 'WalletRoot', navigationOptions: defaultStackNavigationOptions }),
+  Transactions: createStackNavigator({ TransactionsRoot: TransactionsScreen }, { initialRouteName: 'TransactionsRoot', navigationOptions: defaultStackNavigationOptions }),
+  Vote: createStackNavigator({ VoteRoot: VoteScreen }, { initialRouteName: 'VoteRoot', navigationOptions: defaultStackNavigationOptions }),
+  Settings: createStackNavigator({ SettingsRoot: SettingsScreen }, { initialRouteName: 'SettingsRoot', navigationOptions: defaultStackNavigationOptions })
 },
 {
   initialRouteName: 'Wallet',
@@ -127,8 +69,8 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
 const StartNavigator = createStackNavigator(
 {
   StartRoot: StartScreen,
-  CreateWallet: NavigationHelper.createSingleScreenNavigator({ CreateWalletRoot: CreateWalletScreen }),
-  ImportWallet: NavigationHelper.createSingleScreenNavigator({ ImportWalletRoot: ImportWalletScreen }),
+  CreateWallet: createStackNavigator({ CreateWalletRoot: CreateWalletScreen }, { initialRouteName: 'CreateWalletRoot', navigationOptions: defaultStackNavigationOptions }),
+  ImportWallet: createStackNavigator({ ImportWalletRoot: ImportWalletScreen }, { initialRouteName: 'ImportWalletRoot', navigationOptions: defaultStackNavigationOptions }),
 },
 {
   initialRouteName: 'StartRoot',
@@ -143,9 +85,9 @@ const StartNavigator = createStackNavigator(
 const MainNavigator = createStackNavigator(
 {
   MainRoot: MainScreenBottomTabNavigator,
-  Receive: NavigationHelper.createSingleScreenNavigator({ ReceiveRoot: ReceiveScreen }),
-  Send: NavigationHelper.createSingleScreenNavigator({ SendRoot: SendScreen }),
-  ScanAddress: NavigationHelper.createSingleScreenNavigator({ ScanAddressRoot: ScanAddressScreen })
+  Send: createStackNavigator({ SendRoot: SendScreen }, { initialRouteName: 'SendRoot', navigationOptions: defaultStackNavigationOptions }),
+  Receive: createStackNavigator({ ReceiveRoot: ReceiveScreen }, { initialRouteName: 'ReceiveRoot', navigationOptions: defaultStackNavigationOptions }),
+  ScanAddress: createStackNavigator({ ScanAddressRoot: ScanAddressScreen }, { initialRouteName: 'ScanAddressRoot', navigationOptions: defaultStackNavigationOptions })
 },
 {
   initialRouteName: 'MainRoot',
@@ -163,7 +105,7 @@ const RootNavigator = createSwitchNavigator(
   Main: MainNavigator
 },
 {
-  initialRouteName: 'Main',
+  initialRouteName: 'Start',
 });
 
 export default class App extends React.Component

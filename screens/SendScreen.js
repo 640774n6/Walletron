@@ -13,11 +13,12 @@ export default class SendScreen extends React.Component
   static navigationOptions = ({ navigation }) => {
     return {
       title: 'Send',
-      headerRight: (
+      headerLeft: (
         <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
-          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
+          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>
         </TouchableOpacity>
-      )
+      ),
+      headerRight: (Platform.OS === 'android' && <View/>)
     };
   };
 
@@ -37,7 +38,7 @@ export default class SendScreen extends React.Component
           alignItems: 'center',
           padding: 10
         }}>
-          <Text style={{ fontSize: 14 }}>{`${rowData.name} (${rowData.balance.toFixed(3)}) available`}</Text>
+          <Text style={{ fontSize: 16 }}>{`${rowData.name} (${rowData.balance.toFixed(3)}) available`}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -131,7 +132,7 @@ export default class SendScreen extends React.Component
             }}>
               <Text style={{
                 color: '#000000',
-                fontSize: 16,
+                fontSize: 18,
               }}>Token</Text>
               <View style={{
                 flexDirection: 'row',
@@ -140,7 +141,7 @@ export default class SendScreen extends React.Component
                 <Text style={{
                   flex: 1,
                   color: '#777777',
-                  fontSize: 14,
+                  fontSize: 16,
                   marginTop: 5
                 }}>
                   { `${this.state.token.name} (${this.state.token.balance.toFixed(4)} available)` }
@@ -166,22 +167,22 @@ export default class SendScreen extends React.Component
               }}>
                 <Text style={{
                   color: '#000000',
-                  fontSize: 16
+                  fontSize: 18
                 }}>Recipient Address</Text>
                 {
                   this.state.recipient.address ?
                     (this.state.recipient.valid ?
-                      <FontAwesome name='check-circle' size={16} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={16} color='#db3b21' style={{ marginLeft: 5 }}/>)
+                      <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
+                      <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
                     : null
                 }
               </View>
               <View style={{ flexDirection: 'row' }}>
                 <TouchableOpacity onPress={ this.onPasteAddress.bind(this) }>
-                  <Foundation name='paperclip' size={22} color='#000000'/>
+                  <Foundation name='paperclip' size={24} color='#000000'/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={ this.onShouldScanAddress.bind(this) }>
-                  <FontAwesome name='qrcode' size={22} color='#000000' style={{ marginLeft: 10 }}/>
+                  <FontAwesome name='qrcode' size={24} color='#000000' style={{ marginLeft: 15 }}/>
                 </TouchableOpacity>
               </View>
             </View>
@@ -189,7 +190,7 @@ export default class SendScreen extends React.Component
               style={{
                 flex: 1,
                 color: '#777777',
-                fontSize: 14,
+                fontSize: 16,
                 height: 22,
                 marginTop: 5
               }}
@@ -219,13 +220,13 @@ export default class SendScreen extends React.Component
               }}>
                 <Text style={{
                   color: '#000000',
-                  fontSize: 16
+                  fontSize: 18
                 }}>Amount</Text>
                 {
                   this.state.amount ?
                     (this.state.amount <= this.state.token.balance ?
-                      <FontAwesome name='check-circle' size={16} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={16} color='#db3b21' style={{ marginLeft: 5 }}/>)
+                      <FontAwesome name='check-circle' size={22} color='#1aaa55' style={{ marginLeft: 5 }}/> :
+                      <FontAwesome name='exclamation-circle' size={22} color='#db3b21' style={{ marginLeft: 5 }}/>)
                     : null
                 }
               </View>
@@ -234,7 +235,7 @@ export default class SendScreen extends React.Component
               style={{
                 flex: 1,
                 color: '#777777',
-                fontSize: 14,
+                fontSize: 16,
                 height: 22,
                 marginTop: 5
               }}

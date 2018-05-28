@@ -43,42 +43,10 @@ const SECTIONS = [{
 }];
 
 export default class WalletScreen extends React.Component {
-  static renderWalletDropDownRow(rowData, rowID, highlighted) {
-    return (
-      <TouchableOpacity>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: 15
-        }}>
-          <Text style={{ fontSize: 16 }}>{rowData.name}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  static adjustFrameWalletDropDown(style) {
-    style.top += Platform.OS === 'android' ? -15 : 15;
-    style.right += 15;
-    style.height = 'auto';
-    style.maxHeight = 200;
-    return style;
-  }
-
   static navigationOptions = ({ navigation }) => {
     return {
       title: 'Wallet',
       headerLeft: (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
-          <TouchableOpacity onPress={ () => navigation.navigate('Send') }>
-            <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={ () => navigation.navigate('Receive') }>
-            <FontAwesome name='qrcode' color='#ffffff' size={24}/>
-          </TouchableOpacity>
-        </View>
-      ),
-      headerRight: (
         <ModalDropdown
           options={[
             { name: 'Master Wallet', address: TEST_WALLET_ADDRESS },
@@ -101,22 +69,53 @@ export default class WalletScreen extends React.Component {
             borderRadius: 8,
             overflow: 'hidden'
           }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
             <BlockieSvg
               size={16}
               scale={1.5}
               seed={TEST_WALLET_ADDRESS}
               containerStyle={{
                 overflow: 'hidden',
-                marginLeft: 15,
-                borderRadius: 3,
+                borderRadius: 3
             }}/>
             <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
           </View>
         </ModalDropdown>
+      ),
+      headerRight: (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+          <TouchableOpacity onPress={ () => navigation.navigate('Send') }>
+            <FontAwesome name='send' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={ () => navigation.navigate('Receive') }>
+            <FontAwesome name='qrcode' color='#ffffff' size={24}/>
+          </TouchableOpacity>
+        </View>
       )
     }
   };
+
+  static renderWalletDropDownRow(rowData, rowID, highlighted) {
+    return (
+      <TouchableOpacity>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 15
+        }}>
+          <Text style={{ fontSize: 16 }}>{rowData.name}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  static adjustFrameWalletDropDown(style) {
+    style.top += Platform.OS === 'android' ? -15 : 15;
+    style.left += 15;
+    style.height = 'auto';
+    style.maxHeight = 200;
+    return style;
+  }
 
   constructor()
   {

@@ -11,30 +11,20 @@ export default class ScanAddressScreen extends React.Component
       title: 'Scan Address',
       headerLeft: (
         <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
-          <Ionicons name='md-reverse-camera' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>
+          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>
         </TouchableOpacity>
       ),
       headerRight: (
-        <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
-          <FontAwesome name='close' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
+        <TouchableOpacity onPress={ navigation.state.params.onShouldFlipCamera }>
+          <Ionicons name='md-reverse-camera' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
         </TouchableOpacity>
       )
     };
   };
 
-  constructor()
-  {
-    super();
-    this.state = {
-      cameraPermission: false,
-      scanning: true
-    }
-  }
-
-  async componentDidMount()
-  {
-    const { status } = await Permissions.askAsync(Permissions.CAMERA);
-    this.setState({ cameraPermission: (status === 'granted') });
+  onShouldFlipCamera() {
+    var newFrontOrBack = this.state.frontOrBack === 'front' ? 'back' : 'front';
+    this.setState({ frontOrBack: newFrontOrBack });
   }
 
   onBarcodeScanned({ type, data }) {
@@ -44,6 +34,24 @@ export default class ScanAddressScreen extends React.Component
       this.props.navigation.state.params.onBarcodeScanned(data);
       this.props.navigation.dispatch(NavigationActions.back());
     }
+  }
+
+  constructor()
+  {
+    super();
+    this.state = {
+      cameraPermission: false,
+      frontOrBack: 'back',
+      scanning: true
+    }
+  }
+
+  async componentDidMount()
+  {
+    this.props.navigation.setParams({ onShouldFlipCamera: this.onShouldFlipCamera.bind(this)  })
+
+    const { status } = await Permissions.askAsync(Permissions.CAMERA);
+    this.setState({ cameraPermission: (status === 'granted') });
   }
 
   render()
@@ -63,6 +71,7 @@ export default class ScanAddressScreen extends React.Component
             <View style={{ flex: 1 }}>
               <BarCodeScanner
                 style={StyleSheet.absoluteFill}
+                type={ this.state.frontOrBack }
                 barCodeTypes={ [BarCodeScanner.Constants.BarCodeType.qr] }
                 onBarCodeRead={ this.onBarcodeScanned.bind(this) }/>
                 <View style={{

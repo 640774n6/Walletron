@@ -21,7 +21,11 @@ const DEFAULT_SETTINGS = [
 
 export default class SettingsScreen extends React.Component
 {
-  static navigationOptions = { title: 'Settings' };
+  static navigationOptions = {
+    title: 'Settings',
+    headerLeft: (Platform.OS === 'android' && <View/>),
+    headerRight: (Platform.OS === 'android' && <View/>)
+  };
 
   constructor()
   {

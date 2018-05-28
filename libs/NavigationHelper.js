@@ -43,24 +43,4 @@ export default class NavigationHelper
       }
     }
   };
-
-  static createSingleScreenNavigator(routeConfig)
-  {
-    return createStackNavigator(routeConfig,
-    {
-      navigationOptions:
-      {
-        headerTitleStyle: { flex: 1, textAlign: 'center' },
-        headerStyle: {
-          backgroundColor: '#333333',
-          borderBottomWidth: 0,
-          shadowOpacity: 0,
-          elevation: 0
-        },
-        headerLeft: (Platform.OS === 'android' && <View/>),
-        headerRight: (Platform.OS === 'android' && <View/>),
-        headerTintColor: '#ffffff'
-      }
-    });
-  }
 }
