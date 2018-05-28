@@ -22,6 +22,8 @@
 		B70B83DF20B524DA00598F71 /* TronSignature.m in Sources */ = {isa = PBXBuildFile; fileRef = B70B83DE20B524DA00598F71 /* TronSignature.m */; };
 		B797DA2920B26A790038863E /* NSString+Base58.m in Sources */ = {isa = PBXBuildFile; fileRef = B797DA2820B26A790038863E /* NSString+Base58.m */; };
 		B7CA527220AED3240089FD06 /* TronClient.m in Sources */ = {isa = PBXBuildFile; fileRef = B7CA527120AED3240089FD06 /* TronClient.m */; };
+		B7EAD81D20BC05420052C247 /* InputMask.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B7EAD81C20BC05420052C247 /* InputMask.framework */; };
+		B7EAD81E20BC05420052C247 /* InputMask.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B7EAD81C20BC05420052C247 /* InputMask.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		EBB8117C1BFA0514F79CAF74 /* libPods-walletron.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4A88D15726AD99E8A257BC7 /* libPods-walletron.a */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				B7EAD81E20BC05420052C247 /* InputMask.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,6 +75,8 @@
 		B797DA2820B26A790038863E /* NSString+Base58.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSString+Base58.m"; sourceTree = "<group>"; };
 		B7CA527020AED3240089FD06 /* TronClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TronClient.h; sourceTree = "<group>"; };
 		B7CA527120AED3240089FD06 /* TronClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TronClient.m; sourceTree = "<group>"; };
+		B7EAD81C20BC05420052C247 /* InputMask.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = InputMask.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B7EAD81F20BC054F0052C247 /* InputMask.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InputMask.framework; path = "../../../../../Library/Developer/Xcode/DerivedData/walletron-dkvufvgdqumhmifjpbvixqseoano/Build/Products/Debug-iphoneos/InputMask.framework"; sourceTree = "<group>"; };
 		C4A88D15726AD99E8A257BC7 /* libPods-walletron.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-walletron.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CBD0684BC5E84965B8BBF64A /* RNTextInputMask.xcodeproj */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "wrapper.pb-project"; name = RNTextInputMask.xcodeproj; path = "../node_modules/react-native-text-input-mask/ios/RNTextInputMask/RNTextInputMask.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -83,6 +88,7 @@
 			files = (
 				EBB8117C1BFA0514F79CAF74 /* libPods-walletron.a in Frameworks */,
 				8CF09AC08A6B4AFF8760F6CC /* libRNTextInputMask.a in Frameworks */,
+				B7EAD81D20BC05420052C247 /* InputMask.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +98,7 @@
 		1A42804E64B7E9E0AB8B6799 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B7EAD81F20BC054F0052C247 /* InputMask.framework */,
 				C4A88D15726AD99E8A257BC7 /* libPods-walletron.a */,
 			);
 			name = Frameworks;
@@ -117,6 +124,7 @@
 		B56386381DB9693800A0598C = {
 			isa = PBXGroup;
 			children = (
+				B7EAD81C20BC05420052C247 /* InputMask.framework */,
 				B56386431DB9693800A0598C /* walletron */,
 				B56386421DB9693800A0598C /* Products */,
 				5B29BC350A332C58878A9F13 /* Pods */,

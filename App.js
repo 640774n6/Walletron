@@ -7,6 +7,7 @@ import NavigationHelper from './libs/NavigationHelper.js';
 
 import ReceiveScreen from './screens/ReceiveScreen.js';
 import SendScreen from './screens/SendScreen.js';
+import ScanAddressScreen from './screens/ScanAddressScreen.js';
 import CreateWalletScreen from './screens/CreateWalletScreen.js';
 import ImportWalletScreen from './screens/ImportWalletScreen.js';
 
@@ -143,10 +144,11 @@ const MainNavigator = createStackNavigator(
 {
   MainRoot: MainScreenBottomTabNavigator,
   Receive: NavigationHelper.createSingleScreenNavigator({ ReceiveRoot: ReceiveScreen }),
-  Send: NavigationHelper.createSingleScreenNavigator({ SendRoot: SendScreen })
+  Send: NavigationHelper.createSingleScreenNavigator({ SendRoot: SendScreen }),
+  ScanAddress: NavigationHelper.createSingleScreenNavigator({ ScanAddressRoot: ScanAddressScreen })
 },
 {
-  initialRouteName: 'Send',
+  initialRouteName: 'MainRoot',
   headerMode: 'none',
   mode: 'modal',
   navigationOptions: {

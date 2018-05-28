@@ -21,7 +21,7 @@ export default class SendScreen extends React.Component
     };
   };
 
-  adjustFrameBalanceDropDown(style) {
+  adjustFrameTokenDropDown(style) {
     style.top += Platform.OS === 'android' ? -40 : -15;
     style.width = Dimensions.get('window').width - 30;
     style.height = 'auto';
@@ -29,7 +29,7 @@ export default class SendScreen extends React.Component
     return style;
   }
 
-  renderBalanceDropDownRow(rowData, rowID, highlighted) {
+  renderTokenDropDownRow(rowData, rowID, highlighted) {
     return (
       <TouchableOpacity>
         <View style={{
@@ -41,6 +41,10 @@ export default class SendScreen extends React.Component
         </View>
       </TouchableOpacity>
     );
+  }
+
+  onSelectTokenDropDown(index, rowData) {
+    this.setState({ token: rowData });
   }
 
   async onRecipientAddressChanged(text) {
@@ -60,15 +64,25 @@ export default class SendScreen extends React.Component
     this.setState({ recipient: newRecipient });
   }
 
-  onPasteAddress = async() =>
-  {
+  async onPasteAddress() {
     var pasteAddress = await Clipboard.getString();
     this.recipientAddressTextInput.props.onChangeText(pasteAddress);
   }
 
-  onAmountChanged = (formatted, extracted) =>  {
+  async onShouldScanAddress() {
+    var params = {
+      onBarcodeScanned: this.onAddressScanned.bind(this)
+    }
+    this.props.navigation.navigate({ routeName: 'ScanAddress', params: params });
+  }
+
+  onAmountChanged(formatted, extracted) {
     var newAmount = parseFloat(formatted);
     this.setState({ amount: newAmount });
+  }
+
+  onAddressScanned(address) {
+    this.recipientAddressTextInput.props.onChangeText(address);
   }
 
   constructor()
@@ -96,12 +110,14 @@ export default class SendScreen extends React.Component
           enableOnAndroid={true}>
           <ModalDropdown
             options={[
-              { name: 'TRX', balance: 10.032 }
+              { name: 'TRX', balance: 10.032 },
+              { name: 'Eureka', balance: 4 }
             ]}
             animated={false}
             showsVerticalScrollIndicator={true}
-            adjustFrame={ this.adjustFrameBalanceDropDown.bind(this) }
-            renderRow={ this.renderBalanceDropDownRow.bind(this) }
+            onSelect={ this.onSelectTokenDropDown.bind(this) }
+            adjustFrame={ this.adjustFrameTokenDropDown.bind(this) }
+            renderRow={ this.renderTokenDropDownRow.bind(this) }
             dropdownStyle={{
               borderWidth: 1,
               borderRadius: 8,
@@ -164,7 +180,7 @@ export default class SendScreen extends React.Component
                 <TouchableOpacity onPress={ this.onPasteAddress.bind(this) }>
                   <Foundation name='paperclip' size={22} color='#000000'/>
                 </TouchableOpacity>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={ this.onShouldScanAddress.bind(this) }>
                   <FontAwesome name='qrcode' size={22} color='#000000' style={{ marginLeft: 10 }}/>
                 </TouchableOpacity>
               </View>

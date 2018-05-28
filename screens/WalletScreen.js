@@ -2,7 +2,7 @@ import React from 'react';
 import { StatusBar, SafeAreaView, TouchableOpacity, TouchableHighlight, View, Text, ScrollView, Animated, SectionList, NativeModules, Platform } from 'react-native';
 import { ListItem, Button, Icon } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo';
+import { LinearGradient, BarCodeScanner, Permissions } from 'expo';
 import ModalDropdown from 'react-native-modal-dropdown';
 
 import NavigationHelper from '../libs/NavigationHelper.js';
