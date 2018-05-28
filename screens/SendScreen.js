@@ -1,8 +1,8 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, Platform, View, Text, TouchableOpacity, TextInput, Dimensions, NativeModules } from 'react-native';
-import { ListItem, Icon } from 'react-native-elements';
+import { StatusBar, SafeAreaView, Platform, View, Text, TouchableOpacity, TextInput, Dimensions, NativeModules, Clipboard } from 'react-native';
+import { ListItem, Icon, Button } from 'react-native-elements';
 import { NavigationActions } from 'react-navigation';
-import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Foundation } from '@expo/vector-icons';
 import ModalDropdown from 'react-native-modal-dropdown';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import TextInputMask from 'react-native-text-input-mask';
@@ -44,7 +44,7 @@ export default class SendScreen extends React.Component
   }
 
   async onRecipientAddressChanged(text) {
-    var recipient = {
+    var newRecipient = {
       address: null,
       valid: false
     }
@@ -53,24 +53,29 @@ export default class SendScreen extends React.Component
     {
       const tronClient = NativeModules.TronClient;
       var addressIsValid = await tronClient.validateAddress(text);
-      recipient.address = text;
-      recipient.valid = addressIsValid;
+      newRecipient.address = text;
+      newRecipient.valid = addressIsValid;
     }
 
-    this.setState({ recipient: recipient });
+    this.setState({ recipient: newRecipient });
   }
 
-  onAmountChanged(formatted) {
-    var amount = parseFloat(formatted);
-    console.log('amount = ' + amount.toFixed(4));
-    this.setState({ amount: amount });
+  onPasteAddress = async() =>
+  {
+    var pasteAddress = await Clipboard.getString();
+    this.recipientAddressTextInput.props.onChangeText(pasteAddress);
+  }
+
+  onAmountChanged = (formatted, extracted) =>  {
+    var newAmount = parseFloat(formatted);
+    this.setState({ amount: newAmount });
   }
 
   constructor()
   {
     super();
     this.state = {
-      token: { name: 'TRX', balance: 0.0 },
+      token: { name: 'TRX', balance: 10.032 },
       recipient: {
         address: null,
         valid: false
@@ -91,7 +96,7 @@ export default class SendScreen extends React.Component
           enableOnAndroid={true}>
           <ModalDropdown
             options={[
-              { name: 'TRX', balance: 0.0 }
+              { name: 'TRX', balance: 10.032 }
             ]}
             animated={false}
             showsVerticalScrollIndicator={true}
@@ -108,17 +113,21 @@ export default class SendScreen extends React.Component
               marginBottom: 15,
               padding: 10
             }}>
-              <Text style={{ color: '#ca2b1e' }}>Token</Text>
+              <Text style={{
+                color: '#000000',
+                fontSize: 16,
+              }}>Token</Text>
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center'
               }}>
                 <Text style={{
                   flex: 1,
+                  color: '#777777',
                   fontSize: 14,
                   marginTop: 5
                 }}>
-                  { `${this.state.token.name} (${this.state.token.balance.toFixed(3)} available)` }
+                  { `${this.state.token.name} (${this.state.token.balance.toFixed(4)} available)` }
                 </Text>
                 <MaterialCommunityIcons name='chevron-down' color='#c7c7c7' size={22}/>
               </View>
@@ -139,7 +148,10 @@ export default class SendScreen extends React.Component
                 flexDirection: 'row',
                 alignItems: 'center'
               }}>
-                <Text style={{ color: '#ca2b1e' }}>Recipient Address</Text>
+                <Text style={{
+                  color: '#000000',
+                  fontSize: 16
+                }}>Recipient Address</Text>
                 {
                   this.state.recipient.address ?
                     (this.state.recipient.valid ?
@@ -149,28 +161,30 @@ export default class SendScreen extends React.Component
                 }
               </View>
               <View style={{ flexDirection: 'row' }}>
-                <TouchableOpacity>
-                  <MaterialCommunityIcons name='clipboard-outline' size={22} color='#ca2b1e'/>
+                <TouchableOpacity onPress={ this.onPasteAddress.bind(this) }>
+                  <Foundation name='paperclip' size={22} color='#000000'/>
                 </TouchableOpacity>
                 <TouchableOpacity>
-                  <FontAwesome name='qrcode' size={22} color='#ca2b1e' style={{ marginLeft: 10 }}/>
+                  <FontAwesome name='qrcode' size={22} color='#000000' style={{ marginLeft: 10 }}/>
                 </TouchableOpacity>
               </View>
             </View>
             <TextInput
               style={{
                 flex: 1,
+                color: '#777777',
                 fontSize: 14,
                 height: 22,
                 marginTop: 5
               }}
-              selectionColor='#ca2b1e'
-              autocorrect={false}
+              ref={ ref => this.recipientAddressTextInput = ref }
+              autoCorrect={false}
               returnKeyType={"done"}
               autoCapitalize='none'
               underlineColorAndroid='transparent'
               placeholder='Tron address'
-              onChangeText={ (text) => this.onRecipientAddressChanged.bind(this)(text) }/>
+              onChangeText={ (text) => this.onRecipientAddressChanged.bind(this)(text) }
+              value={ this.state.recipient.address }/>
           </View>
           <View style={{
             backgroundColor: '#ffffff',
@@ -180,56 +194,69 @@ export default class SendScreen extends React.Component
           }}>
             <View style={{
               flexDirection: 'row',
-              alignItems: 'center'
+              alignItems: 'center',
+              justifyContent: 'space-between'
             }}>
-              <Text style={{ color: '#ca2b1e' }}>Amount</Text>
-              {
-                this.state.amount !== 0 ?
-                  (this.state.amount >= this.state.token.balance ?
-                    <FontAwesome name='check-circle' size={16} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                    <FontAwesome name='exclamation-circle' size={16} color='#db3b21' style={{ marginLeft: 5 }}/>)
-                  : null
-              }
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center'
+              }}>
+                <Text style={{
+                  color: '#000000',
+                  fontSize: 16
+                }}>Amount</Text>
+                {
+                  this.state.amount ?
+                    (this.state.amount <= this.state.token.balance ?
+                      <FontAwesome name='check-circle' size={16} color='#1aaa55' style={{ marginLeft: 5 }}/> :
+                      <FontAwesome name='exclamation-circle' size={16} color='#db3b21' style={{ marginLeft: 5 }}/>)
+                    : null
+                }
+              </View>
             </View>
             <TextInputMask
               style={{
                 flex: 1,
+                color: '#777777',
                 fontSize: 14,
                 height: 22,
                 marginTop: 5
               }}
-              selectionColor='#ca2b1e'
-              autocorrect={false}
+              refInput={ ref => this.amountTextInput = ref }
+              autoCorrect={false}
               returnKeyType={"done"}
               autoCapitalize='none'
               underlineColorAndroid='transparent'
               keyboardType='numeric'
               placeholder={ `Amount of ${this.state.token.name} to send` }
               mask='[09999999999].[9999]'
-              onChangeText={ (formatted, extracted) => this.onAmountChanged.bind(this)(formatted) }/>
+              onChangeText={ this.onAmountChanged.bind(this) }
+              value={ this.state.amount }/>
           </View>
-          <TouchableOpacity>
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#ca2b1e',
-              marginBottom: 15,
-              padding: 10,
-              borderRadius: 8
-            }}>
-              <FontAwesome
-                name='send'
-                color='#ffffff'
-                backgroundColor='#ca2b1e'
-                size={22}/>
-              <Text style={{
-                color: '#ffffff',
-                fontSize: 16,
-                marginLeft: 5
-              }}>Send</Text>
-            </View>
-          </TouchableOpacity>
+          <Button
+            disabled={ (!this.state.recipient.valid ||
+                        !this.state.amount ||
+                        this.state.amount > this.state.token.balance) }
+            buttonStyle={{
+              backgroundColor: '#1aaa55',
+              padding: 5
+            }}
+            disabledStyle={{
+              backgroundColor: '#bbbbbb',
+              padding: 5
+            }}
+            containerStyle={{
+              borderRadius: 8,
+              overflow: 'hidden'
+            }}
+            touchableComponent={(<TouchableOpacity/>)}
+            title='Send'
+            icon={{
+              name: 'send',
+              type: 'font-awesome',
+              color: '#ffffff',
+              size: 22
+            }}/>
         </KeyboardAwareScrollView>
       </SafeAreaView>
     );

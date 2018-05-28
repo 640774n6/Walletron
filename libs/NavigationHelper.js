@@ -52,7 +52,7 @@ export default class NavigationHelper
       {
         headerTitleStyle: { flex: 1, textAlign: 'center' },
         headerStyle: {
-          backgroundColor: '#ca2b1e',
+          backgroundColor: '#333333',
           borderBottomWidth: 0,
           shadowOpacity: 0,
           elevation: 0
