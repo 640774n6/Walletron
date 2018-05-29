@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, Platform, View, Text, TouchableOpacity, TextInput, Dimensions, NativeModules, Clipboard } from 'react-native';
+import { StatusBar, SafeAreaView, Platform, View, Text, TouchableOpacity, TextInput, Dimensions, Clipboard } from 'react-native';
 import { ListItem, Icon, Button } from 'react-native-elements';
 import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Foundation, Ionicons, Feather } from '@expo/vector-icons';
@@ -60,8 +60,7 @@ export default class SendScreen extends React.Component
 
     if(text.length > 0)
     {
-      const tronClient = NativeModules.TronClient;
-      var addressIsValid = await tronClient.validateAddress(text);
+      var addressIsValid = await TronWalletService.validateAddress(text);
       newRecipient.address = text;
       newRecipient.valid = addressIsValid;
     }
@@ -96,7 +95,7 @@ export default class SendScreen extends React.Component
     this.setState({ confirmVisible: true });
   }
 
-  async onConfirm() {
+  async onConfirmPress() {
     this.setState({ confirmVisible: false, sendingVisible: true });
 
     var result = await TronWalletService.sendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
@@ -104,7 +103,7 @@ export default class SendScreen extends React.Component
     else { this.setState({ sendingVisible: false, failVisible: true }); }
   }
 
-  onBackToWallet() {
+  onBackToWalletPress() {
     this.setState({ successVisible: false });
     this.props.navigation.pop();
   }
@@ -387,7 +386,7 @@ export default class SendScreen extends React.Component
               size: 18
             }}/>
             <Button
-              onPress={ this.onConfirm.bind(this) }
+              onPress={ this.onConfirmPress.bind(this) }
               titleStyle={{ fontSize: 16 }}
               buttonStyle={{ backgroundColor: '#1aaa55', paddingLeft: 5, paddingRight: 5 }}
               containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
@@ -432,7 +431,7 @@ export default class SendScreen extends React.Component
             <Ionicons name='ios-checkmark-circle-outline' color='#1aaa55' size={75}/>
             <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Transaction successful</Text>
             <Button
-              onPress={ this.onBackToWallet.bind(this) }
+              onPress={ this.onBackToWalletPress.bind(this) }
               titleStyle={{ fontSize: 16 }}
               buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
               containerStyle={{ borderRadius: 8, overflow: 'hidden' }}

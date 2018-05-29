@@ -49,9 +49,24 @@ class TronWalletService {
     return wallet;
   }
 
+  walletExistsWithName(name) {
+    var wallet = this._wallets.find(function(wallet) { return wallet.name === name; });
+    return (wallet !== undefined);
+  }
+
   setCurrentWalletByName(name) {
     var wallet = this.getWalletByName(name);
     this._currentWallet = wallet;
+  }
+
+  async validateAddress(address) {
+    try {
+      var tronClient = NativeModules.TronClient;
+      var addressValid = await tronClient.validateAddress(address);
+      return addressValid;
+    }
+    catch (error) { }
+    return false;
   }
 
   async generateAccount(password) {

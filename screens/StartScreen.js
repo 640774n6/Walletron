@@ -42,11 +42,11 @@ export default class StartScreen extends React.Component
             left: 0,
             right: 0,
             height: 200,
-            alignItems: 'center'
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
             <TronLogoLineGraphic
               style={{
-                marginTop: 50,
                 width: 110,
                 height: 110,
                 transform: [{ scale: logoScale }],
@@ -60,6 +60,7 @@ export default class StartScreen extends React.Component
               scrollEventThrottle={ 16 }
               onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
               <View style={{ marginLeft: 50, marginRight: 50 }}>
+                <Text style={{ fontSize: 18, color: '#ffffff', alignSelf: 'center', marginBottom: 15 }}>WalleTRON</Text>
                 <TouchableOpacity onPress={ this.onCreateWalletPressed.bind(this) }>
                   <View style={{
                     flexDirection: 'row',

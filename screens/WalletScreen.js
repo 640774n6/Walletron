@@ -59,7 +59,7 @@ export default class WalletScreen extends React.Component {
             adjustFrame={ WalletScreen.adjustFrameWalletDropDown.bind(this) }
             renderRow={ WalletScreen.renderWalletDropDownRow.bind(this) }
             dropdownStyle={{
-              borderWidth: 0,
+              borderWidth: 1,
               borderRadius: 8,
               overflow: 'hidden'
             }}>

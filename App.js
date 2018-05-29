@@ -107,7 +107,7 @@ const RootNavigator = createSwitchNavigator(
   Main: MainNavigator
 },
 {
-  initialRouteName: 'Main',
+  initialRouteName: 'Start',
 });
 
 export default class App extends React.Component
@@ -115,28 +115,19 @@ export default class App extends React.Component
   constructor()
   {
     super();
-    this.state = { loading: true };
+
+    var initState = {
+      loading: true,
+      hasWallet: false
+    }
+    this.state = initState;
   }
 
   async componentDidMount()
   {
     await TronWalletService.load();
     var wallet = TronWalletService.getCurrentWallet();
-    if(!wallet)
-    {
-      wallet = {
-        name: 'Brando Wallet',
-        address: '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW',
-        privateKey: '7BE5272664163BFDE05D0148769EFDA7279C6CD4B997288DAA99965639D09481',
-        balance: 0.0,
-        assets: [],
-        timestamp: null
-      }
-      TronWalletService.addWallet(wallet);
-      TronWalletService.setCurrentWalletByName(wallet.name);
-      await TronWalletService.save();
-    }
-    this.setState({ loading: false });
+    this.setState({ loading: false, hasWallet: (wallet != undefined) });
   }
 
   render()

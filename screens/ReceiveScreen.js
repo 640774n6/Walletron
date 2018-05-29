@@ -4,10 +4,9 @@ import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode';
 
+import TronWalletService from '../libs/TronWalletService.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
 import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGraphic.js';
-
-const TEST_WALLET_ADDRESS = '27c1akzkGRZup6DFLtxM5ErfPzAxaJv2dcW';
 
 export default class ReceiveScreen extends React.Component
 {
@@ -27,6 +26,25 @@ export default class ReceiveScreen extends React.Component
     };
   };
 
+  constructor()
+  {
+    super();
+
+    var initState = {
+      walletName: null,
+      walletAddress: null
+    };
+
+    var currentWallet = TronWalletService.getCurrentWallet();
+    if(currentWallet)
+    {
+      initState.walletName = currentWallet.name;
+      initState.walletAddress = currentWallet.address;
+    }
+
+    this.state = initState;
+  }
+
   render()
   {
     return (
@@ -41,13 +59,13 @@ export default class ReceiveScreen extends React.Component
               <BlockieSvg
                 size={16}
                 scale={1.5}
-                seed={TEST_WALLET_ADDRESS}
+                seed={ this.state.walletAddress }
                 containerStyle={{
                   overflow: 'hidden',
                   marginRight: 5,
                   borderRadius: 3,
               }}/>
-              <Text style={{ fontSize: 18 }}>Master Wallet</Text>
+              <Text style={{ fontSize: 18 }}>{ this.state.walletName }</Text>
             </View>
             <View style={{
               backgroundColor:'#ffffff',
@@ -56,7 +74,7 @@ export default class ReceiveScreen extends React.Component
               marginBottom: 15
             }}>
               <QRCode
-                value={TEST_WALLET_ADDRESS}
+                value={ this.state.walletAddress }
                 size={180}
                 bgColor='#000000'
                 fgColor='#ffffff'/>
@@ -76,8 +94,8 @@ export default class ReceiveScreen extends React.Component
               strokeWidth='8'/>
               <Text style={{ fontSize: 16 }}>Tron Address</Text>
             </View>
-            <Text style={{ fontSize: 14, textDecorationLine: 'underline' }}>{TEST_WALLET_ADDRESS}</Text>
-            <TouchableOpacity onPress={ () => Clipboard.setString(TEST_WALLET_ADDRESS) }>
+            <Text style={{ fontSize: 14, textDecorationLine: 'underline' }}>{ this.state.walletAddress }</Text>
+            <TouchableOpacity onPress={ () => Clipboard.setString(this.state.walletAddress) }>
               <View style={{
                 flexDirection: 'row',
                 justifyContent: 'center',
