@@ -12,6 +12,7 @@
     "react-native-keyboard-aware-scroll-view": "^0.5.0",
     "react-native-largelist": "^1.2.12",
     "react-native-modal-dropdown": "^0.6.2",
+    "react-native-modal-overlay": "^1.2.3",
     "react-native-progress": "^3.4.0",
     "react-native-qrcode": "^0.2.6",
     "react-native-step-indicator": "0.0.8",

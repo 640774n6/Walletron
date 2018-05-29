@@ -2,12 +2,15 @@ import React from 'react';
 import { StatusBar, SafeAreaView, Platform, View, Text, TouchableOpacity, TextInput, Dimensions, NativeModules, Clipboard } from 'react-native';
 import { ListItem, Icon, Button } from 'react-native-elements';
 import { NavigationActions } from 'react-navigation';
-import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Foundation } from '@expo/vector-icons';
+import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Foundation, Ionicons, Feather } from '@expo/vector-icons';
 import ModalDropdown from 'react-native-modal-dropdown';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import TextInputMask from 'react-native-text-input-mask';
+import Overlay from 'react-native-modal-overlay';
+import * as Progress from 'react-native-progress';
 
 import TronWalletService from '../libs/TronWalletService.js';
+import BlockieSvg from '../libs/BlockieSvg.js';
 
 export default class SendScreen extends React.Component
 {
@@ -90,7 +93,20 @@ export default class SendScreen extends React.Component
   }
 
   onSendPress() {
-    this.props.navigation.navigate('ConfirmSend');
+    this.setState({ confirmVisible: true });
+  }
+
+  async onConfirm() {
+    this.setState({ confirmVisible: false, sendingVisible: true });
+
+    var result = await TronWalletService.sendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
+    if(result) { this.setState({ sendingVisible: false, successVisible: true }); }
+    else { this.setState({ sendingVisible: false, failVisible: true }); }
+  }
+
+  onBackToWallet() {
+    this.setState({ successVisible: false });
+    this.props.navigation.pop();
   }
 
   constructor()
@@ -98,13 +114,19 @@ export default class SendScreen extends React.Component
     super();
 
     var initState = {
+      walletName : null,
+      walletAddress: null,
       token: null,
       tokens: null,
       recipient: {
         address: null,
         valid: false
       },
-      amount: 0.0
+      amount: 0.0,
+      confirmVisible: false,
+      sendingVisible: false,
+      successVisible: false,
+      failVisible: false
     };
 
     var currentWallet = TronWalletService.getCurrentWallet();
@@ -117,6 +139,9 @@ export default class SendScreen extends React.Component
           balance: parseFloat(asset.balance)
         });
       });
+
+      initState.walletName = currentWallet.name;
+      initState.walletAddress = currentWallet.address;
 
       if(tokens.length > 0)
       {
@@ -250,8 +275,8 @@ export default class SendScreen extends React.Component
                 {
                   this.state.amount ?
                     (this.state.amount <= this.state.token.balance ?
-                      <FontAwesome name='check-circle' size={22} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={22} color='#db3b21' style={{ marginLeft: 5 }}/>)
+                      <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
+                      <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
                     : null
                 }
               </View>
@@ -299,6 +324,157 @@ export default class SendScreen extends React.Component
               size: 22
             }}/>
         </KeyboardAwareScrollView>
+        <Overlay visible={this.state.confirmVisible}
+          closeOnTouchOutside animationType="zoomIn"
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}
+          animationDuration={200}
+          onClose={ () => this.setState({ confirmVisible: false })}>
+          <Text style={{ fontSize: 18, marginBottom: 30 }}>Send Confirmation</Text>
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <BlockieSvg
+                size={14}
+                scale={1.5}
+                seed={ this.state.walletAddress }
+                containerStyle={{
+                  overflow: 'hidden',
+                  marginRight: 5,
+                  borderRadius: 3,
+              }}/>
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.walletName}</Text>
+            </View>
+            <Text style={{ fontSize: 12 }}>{ this.state.walletAddress }</Text>
+          </View>
+          <Ionicons name='ios-arrow-round-down-outline' color='#000000' size={30}/>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons name='coins' color='#000000' size={22}/>
+            <Text style={{ fontSize: 16, color: '#000000', marginLeft: 5 }}>{ `${this.state.amount.toFixed(4)} ${this.state.token.name}` }</Text>
+          </View>
+          <Ionicons name='ios-arrow-round-down-outline' color='#000000' size={30}/>
+          <View style={{ marginBottom: 30, alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <BlockieSvg
+                size={14}
+                scale={1.5}
+                seed={ this.state.recipient.address }
+                containerStyle={{
+                  overflow: 'hidden',
+                  marginRight: 5,
+                  borderRadius: 3,
+              }}/>
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Recipient</Text>
+            </View>
+            <Text style={{ fontSize: 12 }}>{ this.state.recipient.address }</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+          <Button
+            onPress={ () => this.setState({ confirmVisible: false }) }
+            titleStyle={{ fontSize: 16 }}
+            buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+            containerStyle={{ borderRadius: 8, overflow: 'hidden', marginRight: 10 }}
+            title='Cancel'
+            iconContainerStyle={{ marginRight: 0 }}
+            icon={{
+              name: 'times',
+              type: 'font-awesome',
+              color: '#ffffff',
+              size: 18
+            }}/>
+            <Button
+              onPress={ this.onConfirm.bind(this) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#1aaa55', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              title='Confirm'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'check',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.sendingVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Sending</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Progress.Bar color='#ca2b1e' indeterminate={true}/>
+            <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.successVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Send Complete</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Ionicons name='ios-checkmark-circle-outline' color='#1aaa55' size={75}/>
+            <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Transaction successful</Text>
+            <Button
+              onPress={ this.onBackToWallet.bind(this) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              title='Back to Wallet'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'wallet',
+                type: 'entypo',
+                color: '#ffffff',
+                size: 18
+              }}/>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.failVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Send Incomplete</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Ionicons name='ios-close-circle-outline' color='#db3b21' size={75}/>
+            <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Transaction failed</Text>
+            <Button
+              onPress={ () => this.setState({ failVisible: false }) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              title='Dismiss'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'times',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
+          </View>
+        </Overlay>
       </SafeAreaView>
     );
   }

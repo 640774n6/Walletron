@@ -420,7 +420,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
         catch(Exception e)
         {
           //Exception, reject
-          promise.reject("Failed to send token", "Native exception thrown", e);
+          promise.reject("Failed to send token", "Native exception thrown", e.getMessage());
         }
       }
     }).start();

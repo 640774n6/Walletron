@@ -9,7 +9,6 @@ import NavigationHelper from './libs/NavigationHelper.js';
 
 import ReceiveScreen from './screens/ReceiveScreen.js';
 import SendScreen from './screens/SendScreen.js';
-import ConfirmSendScreen from './screens/ConfirmSendScreen.js';
 import ScanAddressScreen from './screens/ScanAddressScreen.js';
 import CreateWalletScreen from './screens/CreateWalletScreen.js';
 import ImportWalletScreen from './screens/ImportWalletScreen.js';
@@ -88,7 +87,7 @@ const StartNavigator = createStackNavigator(
 const MainNavigator = createStackNavigator(
 {
   MainRoot: MainScreenBottomTabNavigator,
-  Send: createStackNavigator({ SendRoot: SendScreen, ConfirmSend: ConfirmSendScreen }, { initialRouteName: 'SendRoot', navigationOptions: defaultStackNavigationOptions }),
+  Send: createStackNavigator({ SendRoot: SendScreen }, { initialRouteName: 'SendRoot', navigationOptions: defaultStackNavigationOptions }),
   Receive: createStackNavigator({ ReceiveRoot: ReceiveScreen }, { initialRouteName: 'ReceiveRoot', navigationOptions: defaultStackNavigationOptions }),
   ScanAddress: createStackNavigator({ ScanAddressRoot: ScanAddressScreen }, { initialRouteName: 'ScanAddressRoot', navigationOptions: defaultStackNavigationOptions })
 },
