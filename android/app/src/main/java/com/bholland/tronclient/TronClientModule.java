@@ -569,7 +569,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
           ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
 
           //Create unfreeze balance contract
-          Contract.UnfreezeBalanceContract freezeBalanceContract = Contract.UnfreezeBalanceContract
+          Contract.UnfreezeBalanceContract unfreezeBalanceContract = Contract.UnfreezeBalanceContract
             .newBuilder()
             .setOwnerAddress(ownerAddressBS)
             .build();
