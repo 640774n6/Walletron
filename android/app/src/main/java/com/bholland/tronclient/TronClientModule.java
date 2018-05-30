@@ -492,4 +492,118 @@ public class TronClientModule extends ReactContextBaseJavaModule
       }
     }).start();
   }
+
+  @ReactMethod
+  public void freezeBalance(final String ownerPrivateKey, final int amount, final int duration, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get key
+          byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+          ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+          //Get data for contract
+          byte[] ownerAddressBytes = ownerKey.getAddress();
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+          //Create freeze balance contract
+          Contract.FreezeBalanceContract freezeBalanceContract = Contract.FreezeBalanceContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .setFrozenBalance(amount)
+            .setFrozenDuration(duration)
+            .build();
+
+          //Attempt to create the transaction using the freeze balance contract
+          Transaction transaction = blockingStubFull.freezeBalance(freezeBalanceContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to freeze balance", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Set timestamp and sign transaction
+          transaction = TransactionUtils.setTimestamp(transaction);
+          transaction = TransactionUtils.sign(transaction, ownerKey);
+
+          //Attempt to broadcast the transaction
+          GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
+          if(broadcastResponse == null)
+          {
+            promise.reject("Failed to freeze balance", "No/bad resppnse from host for broadcast transaction", null);
+            return;
+          }
+
+          //Return result
+          promise.resolve(broadcastResponse.getCodeValue());
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to freeze balance", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void unfreezeBalance(final String ownerPrivateKey, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get key
+          byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+          ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+          //Get data for contract
+          byte[] ownerAddressBytes = ownerKey.getAddress();
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+          //Create unfreeze balance contract
+          Contract.UnfreezeBalanceContract freezeBalanceContract = Contract.UnfreezeBalanceContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .build();
+
+          //Attempt to create the transaction using the unfreeze balance contract
+          Transaction transaction = blockingStubFull.unfreezeBalance(unfreezeBalanceContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to unfreeze balance", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Set timestamp and sign transaction
+          transaction = TransactionUtils.setTimestamp(transaction);
+          transaction = TransactionUtils.sign(transaction, ownerKey);
+
+          //Attempt to broadcast the transaction
+          GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
+          if(broadcastResponse == null)
+          {
+            promise.reject("Failed to unfreeze balance", "No/bad resppnse from host for broadcast transaction", null);
+            return;
+          }
+
+          //Return result
+          promise.resolve(broadcastResponse.getCodeValue());
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to unfreeze balance", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
 }

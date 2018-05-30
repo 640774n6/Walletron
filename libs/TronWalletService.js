@@ -104,8 +104,7 @@ class TronWalletService {
     return null;
   }
 
-  async sendAssetFromCurrentWallet(toAddress, assetName, amount)
-  {
+  async sendAssetFromCurrentWallet(toAddress, assetName, amount) {
     if(this._currentWallet)
     {
       try
@@ -114,18 +113,54 @@ class TronWalletService {
         if(assetName === 'TRX')
         {
           var result = await tronClient.send(this._currentWallet.privateKey, toAddress, amount);
+
           console.log(`TronWalletService.sendAssetFromCurrentWallet() => result: ${result}`);
           return (result === 0);
         }
         else
         {
           var result = await tronClient.sendAsset(this._currentWallet.privateKey, toAddress, assetName, amount);
+
           console.log(`TronWalletService.sendAssetFromCurrentWallet() => result: ${result}`);
           return (result === 0);
         }
       }
       catch (error)
       { console.log(`TronWalletService.sendAssetFromCurrentWallet() => error: ${error}`); }
+    }
+    return false;
+  }
+
+  async freezeBalanceFromCurrentWallet(amount, duration) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var result = await tronClient.freezeBalance(this._currentWallet.privateKey, amount, duration);
+
+        console.log(`TronWalletService.freezeBalanceFromCurrentWallet() => result: ${result}`);
+        return (result === 0);
+      }
+      catch (error)
+      { console.log(`TronWalletService.freezeBalanceFromCurrentWallet() => error: ${error}`); }
+    }
+    return false;
+  }
+
+  async unfreezeBalanceFromCurrentWallet() {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var result = await tronClient.unfreezeBalance(this._currentWallet.privateKey);
+
+        console.log(`TronWalletService.unfreezeBalanceFromCurrentWallet() => result: ${result}`);
+        return (result === 0);
+      }
+      catch (error)
+      { console.log(`TronWalletService.unfreezeBalanceFromCurrentWallet() => error: ${error}`); }
     }
     return false;
   }

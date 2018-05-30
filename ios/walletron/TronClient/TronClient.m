@@ -91,6 +91,54 @@ RCT_EXPORT_MODULE();
     return returnTransaction;
 }
 
+- (Transaction * _Nullable) _createTransactionWithFreezeBalanceContract: (FreezeBalanceContract *) freezeBalanceContract
+{
+    //Declare variables
+    __block Transaction * _Nullable returnTransaction = nil;
+    
+    //Attempt to create the transaction using the freeze balance contract
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet freezeBalanceWithRequest: freezeBalanceContract handler:^(Transaction * _Nullable transaction, NSError * _Nullable error)
+    {
+        //If we got a valid response
+        if(transaction && transaction.rawData.contractArray_Count > 0)
+        { returnTransaction = transaction; }
+         
+        //Signal that create transaction is finished
+        dispatch_semaphore_signal(sema);
+    }];
+    
+    //Wait for create transaction to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return transaction
+    return returnTransaction;
+}
+
+- (Transaction * _Nullable) _createTransactionWithUnfreezeBalanceContract: (UnfreezeBalanceContract *) unfreezeBalanceContract
+{
+    //Declare variables
+    __block Transaction * _Nullable returnTransaction = nil;
+    
+    //Attempt to create the transaction using the unfreeze balance contract
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet unfreezeBalanceWithRequest: unfreezeBalanceContract handler:^(Transaction * _Nullable transaction, NSError * _Nullable error)
+     {
+         //If we got a valid response
+         if(transaction && transaction.rawData.contractArray_Count > 0)
+         { returnTransaction = transaction; }
+         
+         //Signal that create transaction is finished
+         dispatch_semaphore_signal(sema);
+     }];
+    
+    //Wait for create transaction to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return transaction
+    return returnTransaction;
+}
+
 - (Return * _Nullable) _broadcastTransaction: (Transaction * _Nullable) transaction
 {
     //Declare variables
@@ -527,6 +575,132 @@ RCT_REMAP_METHOD(sendAsset,
         NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
         NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
         reject(@"Failed to send token", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(freezeBalance,
+                 ownerPrivateKey:(NSString *)ownerPrivateKey
+                 amount:(NSNumber * _Nonnull)amount
+                 duration:(NSNumber * _Nonnull)duration
+                 freezeBalanceWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Create tron signature for private key, then verify it is valid
+        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
+        if(!tronSignature.valid)
+        {
+            //Signature is invalid, reject and return
+            reject(@"Failed to freeze balance", @"Owner private key invalid", nil);
+            return;
+        }
+        
+        //Get data for contract
+        NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
+        
+        //Create freeze balance contract
+        FreezeBalanceContract *freezeBalanceContract = [FreezeBalanceContract message];
+        freezeBalanceContract.ownerAddress = ownerAddressData;
+        freezeBalanceContract.frozenBalance = [amount longLongValue];
+        freezeBalanceContract.frozenDuration = [duration longLongValue];
+        
+        //Attempt to create the transaction using the freeze balance contract
+        Transaction * _Nullable transaction = [self _createTransactionWithFreezeBalanceContract: freezeBalanceContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to freeze balance", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Set transaction timestamp and get signature
+        transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);
+        NSData *signatureData = [tronSignature sign: transaction.rawData.data];
+        
+        //Add signature for each contract in transaction (Each contract could have a different signature in the future)
+        for(int i = 0; i < transaction.rawData.contractArray_Count; i++)
+        { [transaction.signatureArray addObject: signatureData]; }
+        
+        //Attempt to broadcast the transaction
+        Return * _Nullable broadcastResponse = [self _broadcastTransaction: transaction numberOfRetries: 10];
+        if(!broadcastResponse)
+        {
+            //Problem broadcasting transaction, reject and return
+            reject(@"Failed to freeze balance", @"No/bad resppnse from host for broadcast transaction", nil);
+            return;
+        }
+        
+        //Return result
+        resolve(@(broadcastResponse.code));
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to freeze balance", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(unfreezeBalance,
+                 ownerPrivateKey:(NSString *)ownerPrivateKey
+                 unfreezeBalanceWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Create tron signature for private key, then verify it is valid
+        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
+        if(!tronSignature.valid)
+        {
+            //Signature is invalid, reject and return
+            reject(@"Failed to unfreeze balance", @"Owner private key invalid", nil);
+            return;
+        }
+        
+        //Get data for contract
+        NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
+        
+        //Create unfreeze balance contract
+        UnfreezeBalanceContract *unfreezeBalanceContract = [UnfreezeBalanceContract message];
+        unfreezeBalanceContract.ownerAddress = ownerAddressData;
+        
+        //Attempt to create the transaction using the unfreeze balance contract
+        Transaction * _Nullable transaction = [self _createTransactionWithUnfreezeBalanceContract: unfreezeBalanceContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to unfreeze balance", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Set transaction timestamp and get signature
+        transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);
+        NSData *signatureData = [tronSignature sign: transaction.rawData.data];
+        
+        //Add signature for each contract in transaction (Each contract could have a different signature in the future)
+        for(int i = 0; i < transaction.rawData.contractArray_Count; i++)
+        { [transaction.signatureArray addObject: signatureData]; }
+        
+        //Attempt to broadcast the transaction
+        Return * _Nullable broadcastResponse = [self _broadcastTransaction: transaction numberOfRetries: 10];
+        if(!broadcastResponse)
+        {
+            //Problem broadcasting transaction, reject and return
+            reject(@"Failed to unfreeze balance", @"No/bad resppnse from host for broadcast transaction", nil);
+            return;
+        }
+        
+        //Return result
+        resolve(@(broadcastResponse.code));
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to unfreeze balance", @"Native exception thrown", error);
     }
 }
 

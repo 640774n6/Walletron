@@ -15,11 +15,11 @@ export default class PowerScreen extends React.Component
       headerLeft: (Platform.OS === 'android' && <View/>),
       headerRight: (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-          <TouchableOpacity onPress={ () => navigation.navigate('Send') }>
-            <Ionicons name='md-snow' color='#ffffff' size={24} style={{ marginRight: 10 }}/>
+          <TouchableOpacity onPress={ async() => await TronWalletService.unfreezeBalanceFromCurrentWallet() }>
+            <MaterialCommunityIcons name='fire' color='#ffffff' size={24} style={{ marginRight: 10 }}/>
           </TouchableOpacity>
-          <TouchableOpacity onPress={ () => navigation.navigate('Receive') }>
-            <MaterialCommunityIcons name='fire' color='#ffffff' size={24}/>
+          <TouchableOpacity onPress={ () => navigation.navigate('Send') }>
+            <Ionicons name='md-snow' color='#ffffff' size={24}/>
           </TouchableOpacity>
         </View>
       )
