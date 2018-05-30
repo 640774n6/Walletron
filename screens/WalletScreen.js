@@ -1,8 +1,8 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, TouchableHighlight, View, Text, ScrollView, Animated, SectionList, NativeModules, Platform } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, TouchableHighlight, View, Text, ScrollView, Animated, FlatList, NativeModules, Platform } from 'react-native';
 import { ListItem, Button, Icon } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient, BarCodeScanner, Permissions } from 'expo';
+import { LinearGradient } from 'expo';
 import ModalDropdown from 'react-native-modal-dropdown';
 
 import TronWalletService from '../libs/TronWalletService.js';
@@ -11,35 +11,6 @@ import BlockieSvg from '../libs/BlockieSvg.js';
 
 const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
-
-const SECTIONS = [{
-  key: 0,
-  title: 'Tokens',
-  icon: {
-    name: 'coins',
-    type: 'material-community',
-    color: '#000000'
-  },
-  content: {
-    noneTitle: 'You have no tokens',
-    noneMessage: 'Create a new token or participate using the token menu on the right.'
-  },
-  data: []
-},
-{
-  key: 1,
-  title: 'Power',
-  icon: {
-    name: 'bolt',
-    type: 'font-awesome',
-    color: '#000000'
-  },
-  content: {
-    noneTitle: 'You have no power',
-    noneMessage: 'Freeze balances to gain power using the power menu on the right.'
-  },
-  data: []
-}];
 
 export default class WalletScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
@@ -117,30 +88,28 @@ export default class WalletScreen extends React.Component {
     super();
 
     var initState = {
-      address: '',
-      name: '',
+      address: null,
+      name: null,
       balance: 0.0,
       bandwidth: 0.0,
       value: 0.0,
-      sections: SECTIONS
+      tokens: []
     }
 
     var currentWallet = TronWalletService.getCurrentWallet();
     if(currentWallet)
     {
-      var sections = initState.sections;
-      var tokenData = currentWallet.assets.map(asset => {
+      var tokens = currentWallet.assets.map(asset => {
         return {
           name: asset.name,
           balance: parseFloat(asset.balance)
         };
       });
-      sections[0].data = tokenData;
 
       initState.address = currentWallet.address;
       initState.name = currentWallet.name;
       initState.balance = parseFloat(currentWallet.balance),
-      initState.sections = sections;
+      initState.tokens = tokens;
     }
 
     this.state = initState;
@@ -165,20 +134,26 @@ export default class WalletScreen extends React.Component {
       var currentWallet = TronWalletService.getCurrentWallet();
       if(currentWallet)
       {
-        var sections = this.state.sections;
-        var tokenData = currentWallet.assets.map(asset => {
+        /*var tokens = currentWallet.assets.map(asset => {
           return {
             name: asset.name,
             balance: parseFloat(asset.balance)
           };
-        });
-        sections[0].data = tokenData;
+        });*/
+        var tokens = [];
+        for(var i = 0; i < 100; i++)
+        {
+          tokens.push({
+            name: 'Awesome Token',
+            balance: 100.0
+          });
+        }
 
         this.setState({
           address: currentWallet.address,
           name: currentWallet.name,
           balance: parseFloat(currentWallet.balance),
-          sections: sections
+          tokens: tokens
         });
       }
     }
@@ -195,50 +170,38 @@ export default class WalletScreen extends React.Component {
 
   scrollToTop()
   {
-    this.scrollView.scrollTo({ y: 0, animated: true });
+    this.scrollView.scrollToOffset({ offset: 0, animated: true });
   }
 
-  renderSectionHeaderItem = ({ section, key}) => {
+  renderListHeader() {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Icon name={section.icon.name} type={section.icon.type} size={22} color={ section.icon.color }/>
-          <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>{section.title}</Text>
+          <Icon name='coins' type='material-community' size={24} color='#000000'/>
+          <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>Tokens</Text>
         </View>
-        <TouchableOpacity>
-          <Entypo
-            style={{ marginRight: 10 }}
-            name='dots-three-horizontal'
-            size={28}
-            color='#333333'/>
-        </TouchableOpacity>
       </View>
     );
   }
 
-  renderSectionFooterItem = ({section, key}) => {
-    if(section.data.length === 0)
-    {
-      return (
-        <View style={{
-          alignItems: 'center',
-          backgroundColor: '#ffffff',
-          borderRadius: 8,
-          padding: 15,
-          marginLeft: 10,
-          marginRight: 10,
-          marginBottom: section.key === this.state.sections.length - 1 ? 10 : null,
-        }}>
-          <Text style={{ fontSize: 16, color: '#000000', marginBottom: 5 }}>{ section.content.noneTitle }</Text>
-          <Text style={{ fontSize: 14, color: '#777777' }}>{ section.content.noneMessage }</Text>
-        </View>
-      );
-    }
-    else
-    { return null; }
+  renderListEmpty() {
+    return (
+      <View style={{
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        padding: 15,
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 10
+      }}>
+        <Text style={{ fontSize: 16, color: '#000000', marginBottom: 5 }}>You have no tokens</Text>
+        <Text style={{ fontSize: 14, color: '#777777' }}>Participate or create tokens</Text>
+      </View>
+    );
   }
 
-  renderListItem = ({ item, index, section }) => {
+  renderListItem({item, index}) {
     return (
       <ListItem
         key={ index }
@@ -251,11 +214,12 @@ export default class WalletScreen extends React.Component {
         containerStyle={{
           borderTopLeftRadius: index === 0 ? 8 : null,
           borderTopRightRadius: index === 0 ? 8 : null,
-          borderBottomLeftRadius: index === section.data.length - 1 ? 8 : null,
-          borderBottomRightRadius: index === section.data.length - 1 ? 8 : null,
+          borderBottomLeftRadius: index === this.state.tokens.length - 1 ? 8 : null,
+          borderBottomRightRadius: index === this.state.tokens.length - 1 ? 8 : null,
           backgroundColor: '#ffffff',
-          borderBottomColor: index != section.data.length - 1 ? '#dfdfdf' : null,
-          borderBottomWidth: index != section.data.length - 1 ? 1 : null,
+          borderBottomColor: index != this.state.tokens.length - 1 ? '#dfdfdf' : null,
+          borderBottomWidth: index != this.state.tokens.length - 1 ? 1 : null,
+          marginBottom: index === this.state.tokens.length - 1 ? 10 : null,
           marginLeft: 10,
           marginRight: 10
         }}/>
@@ -284,20 +248,21 @@ export default class WalletScreen extends React.Component {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#dfdfdf' }}>
         <StatusBar barStyle='light-content'/>
-        <ScrollView
+        <FlatList
           ref={ ref => this.scrollView = ref }
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingTop: HEADER_MAX_HEIGHT }}
           scrollIndicatorInsets={{ top: HEADER_MAX_HEIGHT }}
+          removeClippedSubviews={ Platform.OS === 'android' }
           scrollEventThrottle={ 16 }
-          onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
-          <SectionList
-            keyExtractor={(item, index) => index}
-            renderSectionHeader={ this.renderSectionHeaderItem }
-            renderSectionFooter={ this.renderSectionFooterItem }
-            sections={ this.state.sections }
-            renderItem={ this.renderListItem }/>
-        </ScrollView>
+          onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }
+          windowSize={ 31 }
+          initialNumToRender={ 4 }
+          keyExtractor={ (item, index) => index.toString() }
+          ListHeaderComponent={ this.renderListHeader.bind(this) }
+          ListEmptyComponent={ this.renderListEmpty.bind(this) }
+          data={ this.state.tokens }
+          renderItem={ this.renderListItem.bind(this) }/>
         <Animated.View
           style={{
             height: headerHeight,
@@ -331,9 +296,9 @@ export default class WalletScreen extends React.Component {
               left: 15,
               right: 15}}>
               <Text style={{ color: '#ffffff', fontSize: 22 }}>
-                { this.state.balance.toFixed(3) } TRX
+                { this.state.balance.toFixed(4) } TRX
               </Text>
-              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 16 }}>
+              <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 18 }}>
                 (${ (this.state.balance * this.state.value).toFixed(2) })
               </Text>
             </Animated.View>
@@ -363,7 +328,7 @@ export default class WalletScreen extends React.Component {
                     strokeWidth='6'/>
                   <View>
                     <Text style={{ color: '#ffffff', fontSize: 14, marginRight: 5 }}>
-                      { this.state.balance.toFixed(3) } TRX
+                      { this.state.balance.toFixed(4) } TRX
                     </Text>
                     <Text style={{ color: '#ffffff', opacity: 0.75, fontSize: 12 }}>
                       (${ (this.state.balance * this.state.value).toFixed(2) })

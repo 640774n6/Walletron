@@ -15,6 +15,7 @@ import ImportWalletScreen from './screens/ImportWalletScreen.js';
 
 import StartScreen from './screens/StartScreen.js';
 import WalletScreen from './screens/WalletScreen.js';
+import PowerScreen from './screens/PowerScreen.js';
 import TransactionsScreen from './screens/TransactionsScreen.js';
 import VoteScreen from './screens/VoteScreen.js';
 import SettingsScreen from './screens/SettingsScreen.js';
@@ -33,6 +34,7 @@ const defaultStackNavigationOptions = {
 const MainScreenBottomTabNavigator = createBottomTabNavigator(
 {
   Wallet: createStackNavigator({ WalletRoot: WalletScreen }, { initialRouteName: 'WalletRoot', navigationOptions: defaultStackNavigationOptions }),
+  Power: createStackNavigator({ PowerRoot: PowerScreen }, { initialRouteName: 'PowerRoot', navigationOptions: defaultStackNavigationOptions }),
   Transactions: createStackNavigator({ TransactionsRoot: TransactionsScreen }, { initialRouteName: 'TransactionsRoot', navigationOptions: defaultStackNavigationOptions }),
   Vote: createStackNavigator({ VoteRoot: VoteScreen }, { initialRouteName: 'VoteRoot', navigationOptions: defaultStackNavigationOptions }),
   Settings: createStackNavigator({ SettingsRoot: SettingsScreen }, { initialRouteName: 'SettingsRoot', navigationOptions: defaultStackNavigationOptions })
@@ -47,6 +49,9 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
       {
         case 'Wallet':
           iconElement = (<Entypo name='wallet' color={tintColor} size={22} />);
+          break;
+        case 'Power':
+          iconElement = (<FontAwesome name='bolt' color={tintColor} size={22} />);
           break;
         case 'Transactions':
           iconElement = (<FontAwesome name='exchange' color={tintColor} size={22} />);
