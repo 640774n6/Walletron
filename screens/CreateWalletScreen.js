@@ -54,26 +54,17 @@ export default class CreateWalletScreen extends React.Component
 
   onNameChanged(text) {
     var nameTaken = false;
-
     if(text.length > 0)
     { nameTaken = TronWalletService.walletExistsWithName(text); }
 
     this.setState({ name: text, nameAvailable: !nameTaken });
   }
 
-  onPasswordChanged(text) {
-    this.setState({ password: text });
-  }
-
-  onPasswordRepeatChanged(text) {
-    this.setState({ passwordRepeat: text });
-  }
-
   async onCreatePress() {
     this.setState({ generatingVisible: true });
     await Util.sleep(1000);
 
-    var generatedAccount = await TronWalletService.generateAccount(this.state.password);
+    var generatedAccount = await TronWalletService.generateAccount(this.state.passphrase);
     if(generatedAccount)
     {
       var newWallet = {
@@ -104,10 +95,6 @@ export default class CreateWalletScreen extends React.Component
     }
   }
 
-  onGoToWalletPress() {
-    this.props.navigation.navigate('MainRoot');
-  }
-
   constructor()
   {
     super();
@@ -116,8 +103,7 @@ export default class CreateWalletScreen extends React.Component
       name: null,
       nameAvailable: false,
       type: { key: 0, name: 'Hot wallet' },
-      password: null,
-      passwordRepeat: null,
+      passphrase: null,
       account: {
         address: null,
         privateKey: null,
@@ -247,13 +233,10 @@ export default class CreateWalletScreen extends React.Component
                 <Text style={{
                   color: '#000000',
                   fontSize: 18
-                }}>Password</Text>
+                }}>Passphrase</Text>
                 {
-                  this.state.password ?
-                    (this.state.password.length > 7 ?
-                      <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
-                    : null
+                  this.state.passphrase ?
+                      <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> : null
                 }
               </View>
             </View>
@@ -265,67 +248,20 @@ export default class CreateWalletScreen extends React.Component
                 height: 22,
                 marginTop: 5
               }}
-              ref={ ref => this.passwordTextInput = ref }
+              ref={ ref => this.passphraseTextInput = ref }
               autoCorrect={false}
               secureTextEntry={true}
               returnKeyType={"done"}
               autoCapitalize='none'
               underlineColorAndroid='transparent'
-              placeholder='Password'
-              onChangeText={ (text) => this.onPasswordChanged.bind(this)(text) }/>
-          </View>
-          <View style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 8,
-            marginBottom: 15,
-            padding: 10
-          }}>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center'
-              }}>
-                <Text style={{
-                  color: '#000000',
-                  fontSize: 18
-                }}>Repeat Password</Text>
-                {
-                  this.state.passwordRepeat ?
-                    (this.state.passwordRepeat === this.state.password ?
-                      <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
-                    : null
-                }
-              </View>
-            </View>
-            <TextInput
-              style={{
-                flex: 1,
-                color: '#777777',
-                fontSize: 16,
-                height: 22,
-                marginTop: 5
-              }}
-              ref={ ref => this.passwordRepeatTextInput = ref }
-              autoCorrect={false}
-              secureTextEntry={true}
-              returnKeyType={"done"}
-              autoCapitalize='none'
-              underlineColorAndroid='transparent'
-              placeholder='Password'
-              onChangeText={ (text) => this.onPasswordRepeatChanged.bind(this)(text) }/>
+              placeholder='Seed passphrase'
+              onChangeText={ (text) => this.setState({ passphrase: text }) }/>
           </View>
           <Button
             onPress={ this.onCreatePress.bind(this) }
             disabled={ (!this.state.name ||
                         !this.state.nameAvailable ||
-                        !this.state.password ||
-                        !this.state.passwordRepeat ||
-                        this.state.password != this.state.passwordRepeat) }
+                        !this.state.passphrase) }
             buttonStyle={{
               backgroundColor: '#1aaa55',
               padding: 5
@@ -340,8 +276,8 @@ export default class CreateWalletScreen extends React.Component
             }}
             title='Create Wallet'
             icon={{
-              name: 'wallet',
-              type: 'entypo',
+              name: 'library-add',
+              type: 'material',
               color: '#ffffff',
               size: 22
             }}/>
@@ -355,7 +291,7 @@ export default class CreateWalletScreen extends React.Component
               padding: 15,
               margin: 0
             }}>
-            <Text style={{ fontSize: 18 }}>Creating Wallet</Text>
+            <Text style={{ fontSize: 18 }}>Generating Wallet</Text>
             <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
               <Progress.Bar color='#ca2b1e' indeterminate={true}/>
               <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>
@@ -396,7 +332,7 @@ export default class CreateWalletScreen extends React.Component
               titleStyle={{ fontSize: 16 }}
               buttonStyle={{ backgroundColor: '#1aaa55', paddingLeft: 5, paddingRight: 5 }}
               containerStyle={{ borderRadius: 8, overflow: 'hidden', marginBottom: 10 }}
-              title="Ready!"
+              title="Ready"
               iconContainerStyle={{ marginRight: 0 }}
               icon={{
                 name: 'check',
@@ -418,8 +354,8 @@ export default class CreateWalletScreen extends React.Component
             <Text style={{ fontSize: 18, marginBottom: 15 }}>Backup Seed Words</Text>
             <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#000000', marginBottom: 15 }}>{ this.state.account.mnemonics }</Text>
             <Text style={{ fontSize: 14, color: '#777777', marginBottom: 15 }}>
-              You can import/restore your wallet using only these 12 words and
-              your wallet password. If you are smart, you will write them down
+              You can import/restore your wallet using these 12 words and
+              the passphrase you chose. If you are smart, you will write them down
               and keep them secret.
             </Text>
             <Button
@@ -479,9 +415,9 @@ export default class CreateWalletScreen extends React.Component
             <Text style={{ fontSize: 18 }}>Wallet Created</Text>
             <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
               <Ionicons name='ios-checkmark-circle-outline' color='#1aaa55' size={75}/>
-              <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Wallet created successful</Text>
+              <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Wallet created successfully</Text>
               <Button
-                onPress={ this.onGoToWalletPress.bind(this) }
+                onPress={ () => this.props.navigation.navigate('MainRoot') }
                 titleStyle={{ fontSize: 16 }}
                 buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
                 containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
@@ -505,10 +441,10 @@ export default class CreateWalletScreen extends React.Component
               padding: 15,
               margin: 0
             }}>
-            <Text style={{ fontSize: 18 }}>Wallet Not Created</Text>
+            <Text style={{ fontSize: 18 }}>Create Wallet Failed</Text>
             <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
               <Ionicons name='ios-close-circle-outline' color='#db3b21' size={75}/>
-              <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Wallet generation failed</Text>
+              <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Wallet generation error</Text>
               <Button
                 onPress={ () => this.setState({ failVisible: false }) }
                 titleStyle={{ fontSize: 16 }}

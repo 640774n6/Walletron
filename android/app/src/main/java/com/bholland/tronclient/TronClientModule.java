@@ -62,6 +62,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
   private static final int TRX_DROP = 1000000;
   private static final int DECODED_PUBKEY_LENGTH = 21;
   private static final int DECODED_PREFIX_BYTE = 0xa0;
+  private static final int PRIVATE_KEY_LENGTH = 64;
 
   private final ReactApplicationContext reactContext;
 
@@ -184,7 +185,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
   }
 
   @ReactMethod
-  public void restoreAccount(final String mnemonics, final String password, final Promise promise)
+  public void restoreAccountFromMnemonics(final String mnemonics, final String password, final Promise promise)
   {
     new Thread(new Runnable()
     {
@@ -214,7 +215,6 @@ public class TronClientModule extends ReactContextBaseJavaModule
           WritableMap returnRestoredAccount = Arguments.createMap();
           returnRestoredAccount.putString("address", address);
           returnRestoredAccount.putString("privateKey", privateKey);
-          returnRestoredAccount.putString("mnemonics", mnemonics);
 
           //Return restored account map
           promise.resolve(returnRestoredAccount);
@@ -222,7 +222,41 @@ public class TronClientModule extends ReactContextBaseJavaModule
         catch(Exception e)
         {
           //Exception, reject
-          promise.reject("Failed to restore account", "Native exception thrown", e);
+          promise.reject("Failed to restore account from mnemonics", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void restoreAccountFromPrivateKey(final String privateKey, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get key
+          byte[] privateKeyBytes = ByteArray.fromHexString(privateKey);
+          ECKey key = ECKey.fromPrivate(privateKeyBytes);
+
+          //Get public address
+          byte[] addressBytes = key.getAddress();
+          String address = _encode58Check(addressBytes);
+
+          //Create restored account map
+          WritableMap returnRestoredAccount = Arguments.createMap();
+          returnRestoredAccount.putString("address", address);
+          returnRestoredAccount.putString("privateKey", privateKey);
+
+          //Return restored account map
+          promise.resolve(returnRestoredAccount);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to restore account from private key", "Native exception thrown", e);
         }
       }
     }).start();
@@ -420,7 +454,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
         catch(Exception e)
         {
           //Exception, reject
-          promise.reject("Failed to send token", "Native exception thrown", e.getMessage());
+          promise.reject("Failed to send token", "Native exception thrown", e);
         }
       }
     }).start();

@@ -44,6 +44,10 @@ class TronWalletService {
     return this._currentWallet;
   }
 
+  hasCurrentWallet() {
+    return (this._currentWallet != undefined);
+  }
+
   getWalletByName(name) {
     var wallet = this._wallets.find(function(wallet) { return wallet.name === name; });
     return wallet;
@@ -51,7 +55,7 @@ class TronWalletService {
 
   walletExistsWithName(name) {
     var wallet = this._wallets.find(function(wallet) { return wallet.name === name; });
-    return (wallet !== undefined);
+    return (wallet != undefined);
   }
 
   setCurrentWalletByName(name) {
@@ -79,10 +83,21 @@ class TronWalletService {
     return null;
   }
 
-  async restoreAccount(mnemonics, password) {
+  async restoreAccountFromMnemonics(mnemonics, password) {
     try {
       var tronClient = NativeModules.TronClient;
-      var restoredAccount = await tronClient.restoreAccount(password);
+      var restoredAccount = await tronClient.restoreAccountFromMnemonics(mnemonics, password);
+      return restoredAccount;
+    }
+    catch (error) { }
+    return null;
+  }
+
+  async restoreAccountFromPrivateKey(privateKey)
+  {
+    try {
+      var tronClient = NativeModules.TronClient;
+      var restoredAccount = await tronClient.restoreAccountFromPrivateKey(privateKey);
       return restoredAccount;
     }
     catch (error) { }

@@ -101,15 +101,6 @@ const MainNavigator = createStackNavigator(
   transitionConfig: NavigationHelper.transitionConfigurator
 });
 
-const RootNavigator = createSwitchNavigator(
-{
-  Start: StartNavigator,
-  Main: MainNavigator
-},
-{
-  initialRouteName: 'Start',
-});
-
 export default class App extends React.Component
 {
   constructor()
@@ -126,14 +117,18 @@ export default class App extends React.Component
   async componentDidMount()
   {
     await TronWalletService.load();
-    var wallet = TronWalletService.getCurrentWallet();
-    this.setState({ loading: false, hasWallet: (wallet != undefined) });
+    var hasWallet = TronWalletService.hasCurrentWallet();
+    this.setState({ loading: false, hasWallet: hasWallet });
   }
 
   render()
   {
     if(this.state.loading)
     { return (<AppLoading/>); }
+
+    const RootNavigator = createSwitchNavigator(
+    { Start: StartNavigator, Main: MainNavigator },
+    { initialRouteName: this.state.hasWallet ? 'Main' : 'Start' });
 
     return (<RootNavigator/>);
   }

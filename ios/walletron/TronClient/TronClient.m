@@ -178,10 +178,10 @@ RCT_REMAP_METHOD(generateAccount,
     }
 }
 
-RCT_REMAP_METHOD(restoreAccount,
+RCT_REMAP_METHOD(restoreAccountFromMnemonics,
                  mnemonics: (NSString *) mnemonics
                  password:(NSString *)password
-                 restoreAccountWithResolver:(RCTPromiseResolveBlock)resolve
+                 restoreAccountFromMnemonicsWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
     @try
@@ -191,7 +191,7 @@ RCT_REMAP_METHOD(restoreAccount,
         if(!tronSignature.valid)
         {
             //Signature is invalid, reject and return
-            reject(@"Failed to restore account", @"Mnemonics invalid", nil);
+            reject(@"Failed to restore account from mnemonics", @"Mnemonics invalid", nil);
             return;
         }
         
@@ -199,8 +199,7 @@ RCT_REMAP_METHOD(restoreAccount,
         NSDictionary *returnRestoredAccount =
         @{
             @"address": tronSignature.address,
-            @"privateKey": tronSignature.privateKey,
-            @"mnemonics": tronSignature.mnemonics
+            @"privateKey": tronSignature.privateKey
         };
         
         //Return the restored account dictionary
@@ -211,7 +210,42 @@ RCT_REMAP_METHOD(restoreAccount,
         //Exception, reject
         NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
         NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
-        reject(@"Failed to restore account", @"Native exception thrown", error);
+        reject(@"Failed to restore account from mnemonics", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(restoreAccountFromPrivateKey,
+                 privateKey: (NSString *) privateKey
+                 restoreAccountFromMnemonicsWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Create tron signature for private key, then verify it is valid
+        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: privateKey];
+        if(!tronSignature.valid)
+        {
+            //Signature is invalid, reject and return
+            reject(@"Failed to restore account from private key", @"Private key invalid", nil);
+            return;
+        }
+        
+        //Create restored account dictionary
+        NSDictionary *returnRestoredAccount =
+        @{
+          @"address": tronSignature.address,
+          @"privateKey": tronSignature.privateKey,
+        };
+        
+        //Return the restored account dictionary
+        resolve(returnRestoredAccount);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to restore account from private key", @"Native exception thrown", error);
     }
 }
 
