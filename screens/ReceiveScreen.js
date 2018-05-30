@@ -11,10 +11,11 @@ import { TronLogoPathGraphic, TronLogoLineGraphic } from '../graphics/TronLogoGr
 export default class ReceiveScreen extends React.Component
 {
   static navigationOptions = ({ navigation }) => {
+    var currentWallet = TronWalletService.getCurrentWallet();
     return {
       title: 'Receive',
       headerRight: (
-        <TouchableOpacity onPress={ () => Share.share({ title: 'Master Wallet', message: TEST_WALLET_ADDRESS }) }>
+        <TouchableOpacity onPress={ () => Share.share({ title: currentWallet.name, message: currentWallet.address }) }>
           <Entypo name='share-alternative' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
         </TouchableOpacity>
       ),
@@ -53,21 +54,6 @@ export default class ReceiveScreen extends React.Component
         <ScrollView contentContainerStyle={{ flex: 1 }}>
           <View style={{ alignItems: 'center', margin: 15 }}>
             <View style={{
-              flexDirection: 'row',
-              marginBottom: 15
-            }}>
-              <BlockieSvg
-                size={16}
-                scale={1.5}
-                seed={ this.state.walletAddress }
-                containerStyle={{
-                  overflow: 'hidden',
-                  marginRight: 5,
-                  borderRadius: 3,
-              }}/>
-              <Text style={{ fontSize: 18 }}>{ this.state.walletName }</Text>
-            </View>
-            <View style={{
               backgroundColor:'#ffffff',
               borderRadius: 10,
               padding: 10,
@@ -79,22 +65,21 @@ export default class ReceiveScreen extends React.Component
                 bgColor='#000000'
                 fgColor='#ffffff'/>
             </View>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginBottom: 5
-             }}>
-            <TronLogoLineGraphic
-              style={{
-                width: 25,
-                height: 25,
-                marginRight: 5
-              }}
-              strokeColor='#ca2b1e'
-              strokeWidth='8'/>
-              <Text style={{ fontSize: 16 }}>Tron Address</Text>
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                <BlockieSvg
+                  size={14}
+                  scale={1.5}
+                  seed={ this.state.walletAddress }
+                  containerStyle={{
+                    overflow: 'hidden',
+                    marginRight: 5,
+                    borderRadius: 3,
+                }}/>
+                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.walletName}</Text>
+              </View>
+              <Text style={{ fontSize: 12 }}>{ this.state.walletAddress }</Text>
             </View>
-            <Text style={{ fontSize: 14, textDecorationLine: 'underline' }}>{ this.state.walletAddress }</Text>
             <TouchableOpacity onPress={ () => Clipboard.setString(this.state.walletAddress) }>
               <View style={{
                 flexDirection: 'row',
