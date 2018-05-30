@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, TouchableOpacity, Text, TextInput, ScrollView, NativeModules, Platform, View, Dimensions } from 'react-native';
+import { StatusBar, SafeAreaView, TouchableOpacity, Text, TextInput, ScrollView, NativeModules, Platform, View, Dimensions, Clipboard } from 'react-native';
 import { NavigationActions } from 'react-navigation';
 import { Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -49,18 +49,6 @@ export default class ImportWalletScreen extends React.Component
     );
   }
 
-  onSelectPrivateKeyTypeDropDown(index, rowData) {
-    this.setState({ privateKeyType: rowData });
-  }
-
-  onPrivateKeyNameChanged(text) {
-    var nameTaken = false;
-    if(text.length > 0)
-    { nameTaken = TronWalletService.walletExistsWithName(text); }
-
-    this.setState({ privateKeyName: text, privateKeyNameAvailable: !nameTaken });
-  }
-
   onSelectSeedWordsTypeDropDown(index, rowData) {
     this.setState({ seedWordsType: rowData });
   }
@@ -84,46 +72,17 @@ export default class ImportWalletScreen extends React.Component
     this.setState({ seedWords: text, seedWordsValid: wordsValid });
   }
 
+  async onPasteSeedWords() {
+    var pasteSeedWords = await Clipboard.getString();
+    this.seedWordsTextInput.setNativeProps({ text: pasteSeedWords });
+    this.setState({ seedWords: pasteSeedWords })
+  }
+
   async onSeedWordsImportPress() {
     this.setState({ restoringVisible: true, name: this.state.seedWordsName, type: this.state.seedWordsType });
     await Util.sleep(1000);
 
     var restoredAccount = await TronWalletService.restoreAccountFromMnemonics(this.state.seedWords, this.state.seedWordsPassphrase);
-    if(restoredAccount)
-    {
-      var newWallet = {
-        name: this.state.name,
-        address: restoredAccount.address,
-        privateKey: restoredAccount.privateKey,
-        balance: 0.0,
-        assets: [],
-        type: this.state.type.key,
-        timestamp: null
-      }
-
-      TronWalletService.addWallet(newWallet);
-      TronWalletService.setCurrentWalletByName(newWallet.name);
-      await TronWalletService.save();
-
-      this.setState({
-        account: restoredAccount,
-        restoringVisible: false,
-        restoredVisible: true
-      });
-    }
-    else {
-      this.setState({
-        restoringVisible: false,
-        failVisible: true
-      });
-    }
-  }
-
-  async onPrivateKeyImportPress() {
-    this.setState({ restoringVisible: true, name: this.state.privateKeyName, type: this.state.privateKeyType });
-    await Util.sleep(1000);
-
-    var restoredAccount = await TronWalletService.restoreAccountFromPrivateKey(this.state.privateKey);
     if(restoredAccount)
     {
       var newWallet = {
@@ -315,6 +274,11 @@ export default class ImportWalletScreen extends React.Component
                   : null
               }
             </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={ this.onPasteSeedWords.bind(this) }>
+                <FontAwesome name='paperclip' size={22} color='#000000'/>
+              </TouchableOpacity>
+            </View>
           </View>
           <TextInput
             style={{
@@ -360,6 +324,59 @@ export default class ImportWalletScreen extends React.Component
           }}/>
       </KeyboardAwareScrollView>
     );
+  }
+
+  onSelectPrivateKeyTypeDropDown(index, rowData) {
+    this.setState({ privateKeyType: rowData });
+  }
+
+  onPrivateKeyNameChanged(text) {
+    var nameTaken = false;
+    if(text.length > 0)
+    { nameTaken = TronWalletService.walletExistsWithName(text); }
+
+    this.setState({ privateKeyName: text, privateKeyNameAvailable: !nameTaken });
+  }
+
+  async onPastePrivateKey() {
+    var pastePrivateKey = await Clipboard.getString();
+    this.privateKeyTextInput.setNativeProps({ text: pastePrivateKey });
+    this.setState({ privateKey: pastePrivateKey })
+  }
+
+  async onPrivateKeyImportPress() {
+    this.setState({ restoringVisible: true, name: this.state.privateKeyName, type: this.state.privateKeyType });
+    await Util.sleep(1000);
+
+    var restoredAccount = await TronWalletService.restoreAccountFromPrivateKey(this.state.privateKey);
+    if(restoredAccount)
+    {
+      var newWallet = {
+        name: this.state.name,
+        address: restoredAccount.address,
+        privateKey: restoredAccount.privateKey,
+        balance: 0.0,
+        assets: [],
+        type: this.state.type.key,
+        timestamp: null
+      }
+
+      TronWalletService.addWallet(newWallet);
+      TronWalletService.setCurrentWalletByName(newWallet.name);
+      await TronWalletService.save();
+
+      this.setState({
+        account: restoredAccount,
+        restoringVisible: false,
+        restoredVisible: true
+      });
+    }
+    else {
+      this.setState({
+        restoringVisible: false,
+        failVisible: true
+      });
+    }
   }
 
   renderImportPrivateKeyView() {
@@ -480,6 +497,14 @@ export default class ImportWalletScreen extends React.Component
                     <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
                   : null
               }
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={ this.onPastePrivateKey.bind(this) }>
+                <FontAwesome name='paperclip' size={22} color='#000000'/>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <FontAwesome name='qrcode' size={24} color='#000000' style={{ marginLeft: 15 }}/>
+              </TouchableOpacity>
             </View>
           </View>
           <TextInput

@@ -138,6 +138,54 @@ RCT_EXPORT_MODULE();
     return returnResponse;
 }
 
+- (AccountNetMessage * _Nullable) _getAccountNetworkStats: (Account *) account
+{
+    //Declare variables
+    __block AccountNetMessage * _Nullable returnAccountNetworkStats = nil;
+    
+    //Attempt to get the account network stats
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet getAccountNetWithRequest: account handler:^(AccountNetMessage * _Nullable accountNetworkStats, NSError * _Nullable error)
+    {
+        //If we got a valid response
+        if(accountNetworkStats)
+        { returnAccountNetworkStats = accountNetworkStats; }
+        
+        //Signal that get account network stats is finished
+        dispatch_semaphore_signal(sema);
+    }];
+    
+    //Wait for create transaction to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return account network stats
+    return returnAccountNetworkStats;
+}
+
+- (Account * _Nullable) _getAccount: (Account *) account
+{
+    //Declare variables
+    __block Account * _Nullable returnAccount = nil;
+    
+    //Attempt to get the account
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet getAccountWithRequest: account handler:^(Account * _Nullable accountResponse, NSError * _Nullable error)
+    {
+        //If we got a valid response
+        if(accountResponse)
+        { returnAccount = accountResponse; }
+         
+        //Signal that get account is finished
+        dispatch_semaphore_signal(sema);
+    }];
+    
+    //Wait for create transaction to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return account
+    return returnAccount;
+}
+
 #pragma mark -
 #pragma mark Public Native Methods
 #pragma mark
@@ -275,46 +323,68 @@ RCT_REMAP_METHOD(getAccount,
         requestAccount.address = [accountAddress decodedBase58Data];
         
         //Attempt to get the account
-        [_wallet getAccountWithRequest: requestAccount handler: ^(Account * _Nullable responseAccount, NSError * _Nullable error)
+        Account * _Nullable responseAccount = [self _getAccount: requestAccount];
+        if(!responseAccount)
         {
-            @try
-            {
-                //If there was no response
-                if(!responseAccount)
-                {
-                    //No response, reject and return
-                    reject(@"Failed to get account", @"No response from host for get account", nil);
-                    return;
-                }
-                
-                //Create list of assets
-                NSMutableArray *assets = [NSMutableArray arrayWithCapacity: responseAccount.asset.count];
-                [responseAccount.asset enumerateKeysAndInt64sUsingBlock:^(NSString * _Nonnull key, int64_t value, BOOL * _Nonnull stop)
-                 {
-                     NSDictionary *asset = @{ @"name": key, @"balance": @(value) };
-                     [assets addObject: asset];
-                 }];
-                
-                //Create account dictionary
-                NSDictionary *returnAccount =
-                @{
-                    @"address": accountAddress,
-                    @"name": responseAccount.accountName,
-                    @"balance": @((responseAccount.balance / kTronClientTrxDrop)),
-                    @"assets": assets
-                };
-                
-                //Return the account dictionary
-                resolve(returnAccount);
-            }
-            @catch(NSException *e)
-            {
-                //Exception, reject
-                NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
-                NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
-                reject(@"Failed to get account", @"Native exception thrown", error);
-            }
+            //No response, reject and return
+            reject(@"Failed to get account", @"No response from host for get account", nil);
+            return;
+        }
+        
+        //Attempt to get account network stats
+        AccountNetMessage * _Nullable accountNetworkStats = [self _getAccountNetworkStats: responseAccount];
+        if(!accountNetworkStats)
+        {
+            //Problem getting account network stats, reject and return
+            reject(@"Failed to get account", @"No response from host for get account network stats", nil);
+            return;
+        }
+        
+        //Create bandwidth stats dictionary
+        NSDictionary *bandwidthStats =
+        @{
+            @"freeNetUsed": @(accountNetworkStats.freeNetUsed),
+            @"freeNetLimit": @(accountNetworkStats.freeNetLimit),
+            @"netUsed": @(accountNetworkStats.netUsed),
+            @"netLimit": @(accountNetworkStats.netLimit)
+        };
+        
+        //Create list of assets
+        NSMutableArray *assets = [NSMutableArray arrayWithCapacity: responseAccount.asset_Count];
+        [responseAccount.asset enumerateKeysAndInt64sUsingBlock:^(NSString * _Nonnull key, int64_t value, BOOL * _Nonnull stop)
+        {
+            NSDictionary *asset = @{ @"name": key, @"balance": @(value) };
+            [assets addObject: asset];
         }];
+        
+        //Create list of frozen balances and total
+        int64_t frozenTotal = 0;
+        NSMutableArray *frozenBalances = [NSMutableArray arrayWithCapacity: responseAccount.frozenArray_Count];
+        for(Account_Frozen *frozen in responseAccount.frozenArray)
+        {
+            frozenTotal += frozen.frozenBalance;
+            NSDictionary *frozenBalance =
+            @{
+                @"balance": @((frozen.frozenBalance / kTronClientTrxDrop)),
+                @"expireTime": @(frozen.expireTime)
+            };
+            [frozenBalances addObject: frozenBalance];
+        }
+        
+        //Create account dictionary
+        NSDictionary *returnAccount =
+        @{
+            @"address": accountAddress,
+            @"name": responseAccount.accountName,
+            @"balance": @((responseAccount.balance / kTronClientTrxDrop)),
+            @"assets": assets,
+            @"frozen": frozenBalances,
+            @"frozenTotal": @((frozenTotal / kTronClientTrxDrop)),
+            @"bandwidth": bandwidthStats
+        };
+        
+        //Return the account dictionary
+        resolve(returnAccount);
     }
     @catch(NSException *e)
     {
@@ -375,7 +445,7 @@ RCT_REMAP_METHOD(send,
         if(!broadcastResponse)
         {
             //Problem broadcasting transaction, reject and return
-            reject(@"Failed to send", @"No/bad resppnse from host for broadcast transaction", nil);
+            reject(@"Failed to send", @"No/bad response from host for broadcast transaction", nil);
             return;
         }
         

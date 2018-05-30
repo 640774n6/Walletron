@@ -28,6 +28,7 @@ import org.tron.common.utils.*;
 
 import org.tron.protos.Contract;
 import org.tron.protos.Protocol.Account;
+import org.tron.protos.Protocol.Account.Frozen;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.Transaction;
 
@@ -303,9 +304,24 @@ public class TronClientModule extends ReactContextBaseJavaModule
           if(responseAccount == null)
           {
             //No response, reject and return
-            promise.reject("Failed to get account", "No response from host", null);
+            promise.reject("Failed to get account", "No response from host for get account", null);
             return;
           }
+
+          AccountNetMessage accountNetworkStats = blockingStubFull.getAccountNet(responseAccount);
+          if(accountNetworkStats == null)
+          {
+            //No response, reject and return
+            promise.reject("Failed to get account", "No response from host for get account network stats");
+            return;
+          }
+
+          //Create bandwidth stats map
+          WritableMap bandwidthStats = Arguments.createMap();
+          bandwidthStats.putDouble("freeNetUsed", accountNetworkStats.getFreeNetUsed());
+          bandwidthStats.putDouble("freeNetLimit", accountNetworkStats.getFreeNetLimit());
+          bandwidthStats.putDouble("netUsed", accountNetworkStats.getNetUsed());
+          bandwidthStats.putDouble("netLimit", accountNetworkStats.getNetLimit());
 
           //Parse tokens
           Map<String, Long> responseAssetMap = responseAccount.getAssetMap();
@@ -318,12 +334,29 @@ public class TronClientModule extends ReactContextBaseJavaModule
             returnAssets.pushMap(assetMap);
           }
 
+          //Parse frozen balances and total
+          long frozenTotal = 0;
+          List<Frozen> frozenList = responseAccount.getFrozenList();
+          WritableArray returnFrozenBalances = Arguments.createArray();
+          for (Frozen frozen : frozenList)
+          {
+            frozenTotal += frozen.getFrozenBalance();
+
+            WritableMap frozenBalanceMap = Arguments.createMap();
+            frozenBalanceMap.putDouble("balance", (frozen.getFrozenBalance() / TRX_DROP));
+            frozenBalanceMap.putDouble("expireTime", (double)frozen.getExpireTime());
+            returnFrozenBalances.pushMap(frozenBalanceMap);
+          }
+
           //Create account map
           WritableMap returnAccountMap = Arguments.createMap();
           returnAccountMap.putString("address", accountAddress);
           returnAccountMap.putString("name", responseAccount.getAccountName().toStringUtf8());
           returnAccountMap.putDouble("balance", (responseAccount.getBalance() / TRX_DROP));
           returnAccountMap.putArray("assets", returnAssets);
+          returnAccountMap.putArray("frozen", returnFrozenBalances);
+          returnAccountMap.putDouble("frozenTotal", (frozenTotal / TRX_DROP));
+          returnAccountMap.putMap("bandwidth", bandwidthStats);
 
           //Return account map
           promise.resolve(returnAccountMap);

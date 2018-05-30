@@ -227,9 +227,9 @@ export default class SendScreen extends React.Component
                     : null
                 }
               </View>
-              <View style={{ flexDirection: 'row' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity onPress={ this.onPasteAddress.bind(this) }>
-                  <Foundation name='paperclip' size={24} color='#000000'/>
+                  <FontAwesome name='paperclip' size={22} color='#000000'/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={ this.onShouldScanAddress.bind(this) }>
                   <FontAwesome name='qrcode' size={24} color='#000000' style={{ marginLeft: 15 }}/>

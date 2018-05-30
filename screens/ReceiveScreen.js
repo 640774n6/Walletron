@@ -1,6 +1,7 @@
 import React from 'react';
 import { StatusBar, SafeAreaView, TouchableOpacity, Text, ScrollView, NativeModules, View, Share, Clipboard } from 'react-native';
 import { NavigationActions } from 'react-navigation';
+import { Button } from 'react-native-elements';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode';
 
@@ -80,28 +81,25 @@ export default class ReceiveScreen extends React.Component
               </View>
               <Text style={{ fontSize: 12 }}>{ this.state.walletAddress }</Text>
             </View>
-            <TouchableOpacity onPress={ () => Clipboard.setString(this.state.walletAddress) }>
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
+            <Button
+              onPress={ () => Clipboard.setString(this.state.walletAddress) }
+              buttonStyle={{
                 backgroundColor: '#ca2b1e',
+                padding: 5
+              }}
+              containerStyle={{
+                borderRadius: 8,
                 marginTop: 15,
-                padding: 10,
-                borderRadius: 8
-              }}>
-                <MaterialIcons
-                  name='content-copy'
-                  color='#ffffff'
-                  backgroundColor='#ca2b1e'
-                  size={22}/>
-                <Text style={{
-                  color: '#ffffff',
-                  fontSize: 16,
-                  marginLeft: 5
-                }}>Copy Address</Text>
-              </View>
-            </TouchableOpacity>
+                overflow: 'hidden'
+              }}
+              titleStyle={{ fontSize: 16 }}
+              title='Copy Address'
+              icon={{
+                name: 'paste',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
           </View>
         </ScrollView>
       </SafeAreaView>

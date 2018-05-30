@@ -120,6 +120,7 @@ export default class WalletScreen extends React.Component {
       address: '',
       name: '',
       balance: 0.0,
+      bandwidth: 0.0,
       value: 0.0,
       sections: SECTIONS
     }

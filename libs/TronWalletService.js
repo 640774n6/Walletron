@@ -138,6 +138,9 @@ class TronWalletService {
         var account = await tronClient.getAccount(this._currentWallet.address);
         this._currentWallet.balance = account.balance;
         this._currentWallet.assets = account.assets;
+        this._currentWallet.frozen = account.frozen;
+        this._currentWallet.frozenTotal = account.frozenTotal;
+        this._currentWallet.bandwidth = account.bandwidth;
         this._currentWallet.timestamp = Date.now;
         await this.save();
         return true;
