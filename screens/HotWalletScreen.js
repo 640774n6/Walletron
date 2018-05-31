@@ -20,20 +20,6 @@ export default class HotWalletScreen extends React.Component {
       headerLeft: (
         <View>
           { currentWallet &&
-          <ModalDropdown
-            options={[
-              { name: 'Lock' },
-              { name: 'Change Wallet...' }
-            ]}
-            animated={false}
-            showsVerticalScrollIndicator={true}
-            adjustFrame={ HotWalletScreen.adjustFrameWalletDropDown.bind(this) }
-            renderRow={ HotWalletScreen.renderWalletDropDownRow.bind(this) }
-            dropdownStyle={{
-              borderWidth: 1,
-              borderRadius: 8,
-              overflow: 'hidden'
-            }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
               <BlockieSvg
                 size={16}
@@ -43,9 +29,7 @@ export default class HotWalletScreen extends React.Component {
                   overflow: 'hidden',
                   borderRadius: 3
               }}/>
-              <MaterialCommunityIcons name='chevron-down' color='#ffffff' size={22} style={{ marginLeft: 5 }}/>
-            </View>
-          </ModalDropdown>}
+            </View>}
         </View>
       ),
       headerRight: (
@@ -60,28 +44,6 @@ export default class HotWalletScreen extends React.Component {
       )
     }
   };
-
-  static renderWalletDropDownRow(rowData, rowID, highlighted) {
-    return (
-      <TouchableOpacity>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: 15
-        }}>
-          <Text style={{ fontSize: 16 }}>{rowData.name}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  static adjustFrameWalletDropDown(style) {
-    style.top += Platform.OS === 'android' ? -15 : 15;
-    style.left += 15;
-    style.height = 'auto';
-    style.maxHeight = 200;
-    return style;
-  }
 
   constructor()
   {

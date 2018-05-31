@@ -4,6 +4,35 @@ import { Animated } from 'react-native';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 
+export class TronLogoNameGraphic extends React.Component {
+  render() {
+    const style = this.props.style;
+    const strokeColor = this.props.strokeColor ? this.props.strokeColor : null;
+    const strokeWidth = this.props.strokeWidth ? this.props.strokeWidth : 5;
+    const fillColor = this.props.fillColor ? this.props.fillColor: 'transparent';
+
+    return (
+      <AnimatedSvg style={style} viewBox="0 0 503.863 138.21">
+        <Svg.Rect fill={fillColor} x="33.436" y="47.099" width="11.31" height="79.229"/>
+        <Svg.Rect fill={fillColor} y="11.271" width="100.786" height="11.307"/>
+        <Svg.Rect fill={fillColor} x="56.048" y="47.099" width="11.304" height="79.229"/>
+        <Svg.Rect fill={fillColor} x="425.958" y="83.236" width="11.435" height="43.213"/>
+        <Svg.Polygon fill={fillColor} points="492.428,11.275 492.428,104.184 403.111,0 403.111,126.449 414.544,126.449 414.544,34.027 503.863,138.21
+        	503.863,11.275 "/>
+        <Svg.Path fill={fillColor} d="M316.591,11.281c-31.716,0-57.529,25.804-57.529,57.524c0,31.721,25.813,57.523,57.529,57.523
+        	c31.726,0,57.533-25.803,57.533-57.523C374.125,37.084,348.317,11.281,316.591,11.281 M316.591,115
+        	c-25.466,0-46.19-20.725-46.19-46.195c0-25.476,20.725-46.201,46.19-46.201c25.48,0,46.199,20.725,46.199,46.201
+        	C362.791,94.275,342.072,115,316.591,115"/>
+        <Svg.Path fill={fillColor} d="M316.58,59.725c-4.297,0-7.781,3.483-7.781,7.781s3.484,7.78,7.781,7.78c4.298,0,7.781-3.482,7.781-7.78
+        	S320.877,59.725,316.58,59.725"/>
+        <Svg.Path fill={fillColor} d="M205.632,79.9c14.282-4.382,24.699-17.764,24.699-33.552c0-19.337-15.633-35.073-34.851-35.073v0.005l-54.726-0.005h-11.23
+        	v115.174h11.23V22.72h54.726c12.864,0,23.33,10.685,23.33,23.629c0,12.938-10.46,23.659-23.314,23.664l-0.016-0.011l-43.326-0.01
+        	v56.457h11.233V81.437h30.019h0.058l23.772,45.013h13.095L205.632,79.9z"/>
+      </AnimatedSvg>
+    );
+  }
+}
+
 export class TronLogoPathGraphic extends React.Component {
   render() {
     const style = this.props.style;

@@ -1,19 +1,23 @@
 import { NativeModules, AsyncStorage } from 'react-native';
 
+const DEFAULT_NODE = '47.254.16.55:50051';
+
 class TronWalletService {
   static instance;
 
   constructor()
   {
     if(TronWalletService.instance) { return TronWalletService.instance; }
-    this.wallets = [];
-    this.currentWallet = null;
+    this._wallets = [];
+    this._currentWallet = null;
+    this._fullNodeHost = null;
     TronWalletService.instance = this;
   }
 
   async save() {
     try {
       await AsyncStorage.setItem('@walletron:wallets', JSON.stringify(this._wallets));
+      await AsyncStorage.setItem('@walletron:fullNodeHost', this._fullNodeHost);
 
       if(this._currentWallet)
       { await AsyncStorage.setItem('@walletron:currentWalletName', this._currentWallet.name); }
@@ -26,6 +30,9 @@ class TronWalletService {
     try {
       var wallets = await AsyncStorage.getItem('@walletron:wallets');
       this._wallets = wallets ? JSON.parse(wallets) : [];
+
+      var fullNodeHost = await AsyncStorage.getItem('@walletron:fullNodeHost');
+      this._fullNodeHost = fullNodeHost ? fullNodeHost : DEFAULT_NODE;
 
       var currentWalletName = await AsyncStorage.getItem('@walletron:currentWalletName');
       this.setCurrentWalletByName(currentWalletName);
@@ -67,11 +74,18 @@ class TronWalletService {
     try {
       var tronClient = NativeModules.TronClient;
       var result = await tronClient.setFullNodeHost(fullNodeHostString);
+
+      this._fullNodeHost = fullNodeHostString;
+      await this.save();
       return result;
     }
     catch (error)
     { console.log(`TronWalletService.setFullNodeHost() => error: ${error}`); }
     return false;
+  }
+
+  getFullNodeHost() {
+    return this._fullNodeHost;
   }
 
   async signTransactionFromCurrentWallet(transaction) {

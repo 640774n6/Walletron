@@ -21,14 +21,9 @@ export default class VotesScreen extends React.Component
       title: 'Votes',
       headerLeft: (Platform.OS === 'android' && <View/>),
       headerRight: (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-          <TouchableOpacity>
-            <MaterialCommunityIcons name='undo-variant' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onSubmitVotes : null }>
-            <Entypo name='upload' color='#ffffff' size={22}/>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onSubmitVotes : null }>
+          <Entypo name='upload' color='#ffffff' size={22} style={{ marginRight: 15 }}/>
+        </TouchableOpacity>
       )
     }
   };
@@ -273,12 +268,6 @@ export default class VotesScreen extends React.Component
                 </Text>
               </View>
             </LinearGradient>
-            <SearchBar
-              placeholder='Search'
-              placeholderTextColor='#777777'
-              containerStyle={{ backgroundColor: '#1b1b1b', borderTopWidth: 0, borderBottomWidth: 0 }}
-              inputContainerStyle={{ backgroundColor: '#ffffff' }}
-              inputStyle={{ fontSize: 16, color: '#000000' }}/>
         </View>
         <KeyboardAwareFlatList
           enableOnAndroid={true}

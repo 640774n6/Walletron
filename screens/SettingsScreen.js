@@ -1,23 +1,10 @@
 import React from 'react';
-import { StatusBar, SafeAreaView, ScrollView, Platform, SectionList, View, Text } from 'react-native';
-import { ListItem, Icon } from 'react-native-elements';
-
-const DEFAULT_SETTINGS = [
-  {
-    key: 0,
-    title: 'Security',
-    icon: {
-      name: 'security',
-      type: 'material-community',
-      color: '#000000'
-    },
-    data: [
-      { title: 'Turbo Mode', icon: { name: 'lock', type: 'entypo', color: '#000000' }, type: 'switch', value: true },
-      { title: 'Awesome Mode', icon: { name: 'clock', type: 'entypo', color: '#000000' }, type: 'switch', value: false },
-      { title: 'Use Catz', icon: { name: 'cat', type: 'material-community', color: '#000000' }, type: 'switch', value: true }
-    ]
-  }
-];
+import { StatusBar, SafeAreaView, TouchableOpacity, Text, TextInput, ScrollView, NativeModules, Platform, View, Dimensions } from 'react-native';
+import { NavigationActions } from 'react-navigation';
+import { Button } from 'react-native-elements';
+import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import TronWalletService from '../libs/TronWalletService.js';
 
 export default class SettingsScreen extends React.Component
 {
@@ -27,54 +14,24 @@ export default class SettingsScreen extends React.Component
     headerRight: (Platform.OS === 'android' && <View/>)
   };
 
+  onNodeChanged(text) {
+    this.setState({ node: text });
+  }
+
+  onNodeSubmitEditing() {
+    TronWalletService.setFullNodeHost(this.state.node);
+  }
+
   constructor()
   {
     super();
-    this.state = {
-      settings: DEFAULT_SETTINGS
-    }
-  }
 
-  renderSettingHeaderItem = ({ section, key}) => {
-    return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', margin: 10 }}>
-        <Icon name={section.icon.name} type={section.icon.type} size={22} color={ section.icon.color }/>
-        <Text style={{ fontSize: 18, color: '#000000', marginLeft: 5 }}>{section.title}</Text>
-      </View>
-    );
-  }
+    var initState = {
+      node: null
+    };
 
-  renderSettingListItem = ({ item, index, section }) => {
-    return (
-      <ListItem
-        key={index}
-        title={item.title}
-        titleStyle={{ color: '#000000', fontSize: 16 }}
-        leftIcon={item.icon}
-        hideChevron
-        switch={{
-          value: item.value,
-          onValueChange: (value) => {
-            var newSettings = [...this.state.settings];
-            newSettings[section.key].data[index].value = value;
-            console.log('section.key = ' + section.key + ', index = ' + index);
-            this.setState({ settings: newSettings });
-          },
-          onTintColor: '#ca2b1e',
-          thumbTintColor: Platform.OS === 'android' ? '#ffffff' : null
-        }}
-        containerStyle={{
-          borderTopLeftRadius: index === 0 ? 8 : null,
-          borderTopRightRadius: index === 0 ? 8 : null,
-          borderBottomLeftRadius: index === section.data.length - 1 ? 8 : null,
-          borderBottomRightRadius: index === section.data.length - 1 ? 8 : null,
-          backgroundColor: '#ffffff',
-          borderBottomColor: index != section.data.length - 1 ? '#dfdfdf' : null,
-          borderBottomWidth: index != section.data.length - 1 ? 1 : null,
-          marginLeft: 10,
-          marginRight: 10
-        }}/>
-    );
+    initState.node = TronWalletService.getFullNodeHost();
+    this.state = initState;
   }
 
   render()
@@ -82,13 +39,50 @@ export default class SettingsScreen extends React.Component
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#dfdfdf' }}>
         <StatusBar barStyle='light-content'/>
-        <ScrollView style={{ flex: 1}}>
-          <SectionList
-            renderSectionHeader={ this.renderSettingHeaderItem }
-            renderItem={ this.renderSettingListItem }
-            sections={ this.state.settings }
-            keyExtractor={(item, index) => index}/>
-        </ScrollView>
+        <KeyboardAwareScrollView contentContainerStyle={{ margin: 15 }} enableOnAndroid={true}>
+          <View style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            marginBottom: 15,
+            padding: 10
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center'
+              }}>
+                <Text style={{
+                  color: '#000000',
+                  fontSize: 18
+                }}>Node</Text>
+                {
+                  this.state.node ?
+                  <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> : null
+                }
+              </View>
+            </View>
+            <TextInput
+              style={{
+                flex: 1,
+                color: '#777777',
+                fontSize: 16,
+                height: 22,
+                marginTop: 5
+              }}
+              ref={ ref => this.nodeTextInput = ref }
+              autoCorrect={false}
+              returnKeyType={"done"}
+              underlineColorAndroid='transparent'
+              placeholder='hostname:port'
+              onChangeText={ this.onNodeChanged.bind(this) }
+              onSubmitEditing={ this.onNodeSubmitEditing.bind(this) }
+              value={ this.state.node }/>
+          </View>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     );
   }
