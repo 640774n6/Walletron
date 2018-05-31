@@ -141,6 +141,33 @@ class TronWalletService {
     return null;
   }
 
+  async getOfflineSendAssetFromCurrentWallet(toAddress, assetName, amount) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        if(assetName === 'TRX')
+        {
+          var transaction = await tronClient.getOfflineSend(this._currentWallet.address, toAddress, amount);
+
+          console.log(`TronWalletService.getOfflineSendAssetFromCurrentWallet() => result: ${transaction === null}`);
+          return transaction;
+        }
+        else
+        {
+          var transaction = await tronClient.getOfflineSendAsset(this._currentWallet.address, toAddress, assetName, amount);
+
+          console.log(`TronWalletService.getOfflineSendAssetFromCurrentWallet() => result: ${transaction === null}`);
+          return transaction;
+        }
+      }
+      catch (error)
+      { console.log(`TronWalletService.getOfflineSendAssetFromCurrentWallet() => error: ${error}`); }
+    }
+    return null;
+  }
+
   async sendAssetFromCurrentWallet(toAddress, assetName, amount) {
     if(this._currentWallet)
     {
@@ -168,6 +195,23 @@ class TronWalletService {
     return false;
   }
 
+  async getOfflineFreezeBalanceFromCurrentWallet(amount, duration) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var transaction = await tronClient.getOfflineFreezeBalance(this._currentWallet.address, amount, duration);
+
+        console.log(`TronWalletService.getOfflineFreezeBalanceFromCurrentWallet() => result: ${transaction === null}`);
+        return transaction;
+      }
+      catch (error)
+      { console.log(`TronWalletService.getOfflineFreezeBalanceFromCurrentWallet() => error: ${error}`); }
+    }
+    return null;
+  }
+
   async freezeBalanceFromCurrentWallet(amount, duration) {
     if(this._currentWallet)
     {
@@ -183,6 +227,23 @@ class TronWalletService {
       { console.log(`TronWalletService.freezeBalanceFromCurrentWallet() => error: ${error}`); }
     }
     return false;
+  }
+
+  async getOfflineUnfreezeBalanceFromCurrentWallet() {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var transaction = await tronClient.getOfflineUnfreezeBalance(this._currentWallet.address);
+
+        console.log(`TronWalletService.getOfflineUnfreezeBalanceFromCurrentWallet() => result: ${transaction === null}`);
+        return transaction;
+      }
+      catch (error)
+      { console.log(`TronWalletService.getOfflineUnfreezeBalanceFromCurrentWallet() => error: ${error}`); }
+    }
+    return null;
   }
 
   async unfreezeBalanceFromCurrentWallet() {
@@ -202,6 +263,23 @@ class TronWalletService {
     return false;
   }
 
+  async getOfflineVoteFromCurrentWallet(votes) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var transaction = await tronClient.getOfflineVote(this._currentWallet.address, votes);
+
+        console.log(`TronWalletService.getOfflineVoteFromCurrentWallet() => result: ${transaction === null}`);
+        return transaction;
+      }
+      catch (error)
+      { console.log(`TronWalletService.getOfflineVoteFromCurrentWallet() => error: ${error}`); }
+    }
+    return null;
+  }
+
   async voteFromCurrentWallet(votes) {
     if(this._currentWallet)
     {
@@ -216,30 +294,6 @@ class TronWalletService {
       catch (error)
       { console.log(`TronWalletService.voteFromCurrentWallet() => error: ${error}`); }
     }
-  }
-
-  async getOfflineSendAssetFromCurrentWallet(toAddress, assetName, amount) {
-    if(this._currentWallet)
-    {
-      try
-      {
-        var tronClient = NativeModules.TronClient;
-        if(assetName === 'TRX')
-        {
-          var tronClient = NativeModules.TronClient;
-          var offlineSendTransaction = await tronClient.getOfflineSend(this._currentWallet.address, toAddress, amount);
-
-          return offlineSendTransaction;
-        }
-        else
-        {
-          //TODO: Implement offline sending of tokens
-        }
-      }
-      catch (error)
-      { console.log(`TronWalletService.getOfflineSendAssetFromCurrentWallet() => error: ${error}`); }
-    }
-    return null;
   }
 
   async getWitnesses() {

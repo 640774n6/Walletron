@@ -730,8 +730,6 @@ RCT_REMAP_METHOD(send,
             return;
         }
         
-        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
-        
         //Set transaction timestamp and get signature
         transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);
         NSData *signatureData = [tronSignature sign: transaction.rawData.data];
@@ -761,29 +759,20 @@ RCT_REMAP_METHOD(send,
     }
 }
 
-RCT_REMAP_METHOD(sendAsset,
-                 ownerPrivateKey:(NSString *)ownerPrivateKey
+RCT_REMAP_METHOD(getOfflineSendAsset,
+                 fromAddress:(NSString *)fromAddress
                  toAddress:(NSString *)toAddress
-                 assetName:(NSString *)tokenName
+                 assetName:(NSString *)assetName
                  amount:(NSNumber * _Nonnull)amount
-                 sendAssetWithResolver:(RCTPromiseResolveBlock)resolve
+                 getOfflineSendAssetWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
     @try
     {
-        //Create tron signature for private key, then verify it is valid
-        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
-        if(!tronSignature.valid)
-        {
-            //Signature is invalid, reject and return
-            reject(@"Failed to send token", @"Owner private key invalid", nil);
-            return;
-        }
-        
         //Get data for contract
-        NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
+        NSData *ownerAddressData = [fromAddress decodedBase58Data];
         NSData *toAddressData = [toAddress decodedBase58Data];
-        NSData *assetNameData = [tokenName dataUsingEncoding: NSUTF8StringEncoding];
+        NSData *assetNameData = [assetName dataUsingEncoding: NSUTF8StringEncoding];
         
         //Create transfer asset contract
         TransferAssetContract *transferAssetContract = [TransferAssetContract message];
@@ -797,7 +786,62 @@ RCT_REMAP_METHOD(sendAsset,
         if(!transaction)
         {
             //Problem creating transaction, reject and return
-            reject(@"Failed to send token", @"No/bad response from host for create transaction", nil);
+            reject(@"Failed to get offline send asset", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Get base64 encoded string of transaction
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
+        
+        //Return result
+        resolve(base64EncodedTransaction);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to get offline send asset", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(sendAsset,
+                 ownerPrivateKey:(NSString *)ownerPrivateKey
+                 toAddress:(NSString *)toAddress
+                 assetName:(NSString *)assetName
+                 amount:(NSNumber * _Nonnull)amount
+                 sendAssetWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Create tron signature for private key, then verify it is valid
+        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
+        if(!tronSignature.valid)
+        {
+            //Signature is invalid, reject and return
+            reject(@"Failed to send asset", @"Owner private key invalid", nil);
+            return;
+        }
+        
+        //Get data for contract
+        NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
+        NSData *toAddressData = [toAddress decodedBase58Data];
+        NSData *assetNameData = [assetName dataUsingEncoding: NSUTF8StringEncoding];
+        
+        //Create transfer asset contract
+        TransferAssetContract *transferAssetContract = [TransferAssetContract message];
+        transferAssetContract.ownerAddress = ownerAddressData;
+        transferAssetContract.toAddress = toAddressData;
+        transferAssetContract.assetName = assetNameData;
+        transferAssetContract.amount = [amount longLongValue];
+        
+        //Attempt to create the transaction using the transfer asset contract
+        Transaction * _Nullable transaction = [self _createTransactionWithTransferAssetContract: transferAssetContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to send asset", @"No/bad response from host for create transaction", nil);
             return;
         }
         
@@ -814,7 +858,7 @@ RCT_REMAP_METHOD(sendAsset,
         if(!broadcastResponse)
         {
             //Problem broadcasting transaction, reject and return
-            reject(@"Failed to send token", @"No/bad response from host for broadcast transaction", nil);
+            reject(@"Failed to send asset", @"No/bad response from host for broadcast transaction", nil);
             return;
         }
         
@@ -827,6 +871,48 @@ RCT_REMAP_METHOD(sendAsset,
         NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
         NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
         reject(@"Failed to send token", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(getOfflineFreezeBalance,
+                 fromAddress:(NSString *)fromAddress
+                 amount:(NSNumber * _Nonnull)amount
+                 duration:(NSNumber * _Nonnull)duration
+                 getOfflineFreezeBalanceWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Get data for contract
+        NSData *ownerAddressData = [fromAddress decodedBase58Data];
+        
+        //Create freeze balance contract
+        FreezeBalanceContract *freezeBalanceContract = [FreezeBalanceContract message];
+        freezeBalanceContract.ownerAddress = ownerAddressData;
+        freezeBalanceContract.frozenBalance = ([amount longLongValue] * kTronClientTrxDrop);
+        freezeBalanceContract.frozenDuration = [duration longLongValue];
+        
+        //Attempt to create the transaction using the freeze balance contract
+        Transaction * _Nullable transaction = [self _createTransactionWithFreezeBalanceContract: freezeBalanceContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to get offline freeze balance", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Get base64 encoded string of transaction
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
+        
+        //Return result
+        resolve(base64EncodedTransaction);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to get offline freeze balance", @"Native exception thrown", error);
     }
 }
 
@@ -895,6 +981,44 @@ RCT_REMAP_METHOD(freezeBalance,
     }
 }
 
+RCT_REMAP_METHOD(getOfflineUnfreezeBalance,
+                 fromAddress:(NSString *)fromAddress
+                 getOfflineUnfreezeBalanceWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Get data for contract
+        NSData *ownerAddressData = [fromAddress decodedBase58Data];
+        
+        //Create unfreeze balance contract
+        UnfreezeBalanceContract *unfreezeBalanceContract = [UnfreezeBalanceContract message];
+        unfreezeBalanceContract.ownerAddress = ownerAddressData;
+        
+        //Attempt to create the transaction using the unfreeze balance contract
+        Transaction * _Nullable transaction = [self _createTransactionWithUnfreezeBalanceContract: unfreezeBalanceContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to get offline unfreeze balance", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Get base64 encoded string of transaction
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
+        
+        //Return result
+        resolve(base64EncodedTransaction);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to get offline unfreeze balance", @"Native exception thrown", error);
+    }
+}
+
 RCT_REMAP_METHOD(unfreezeBalance,
                  ownerPrivateKey:(NSString *)ownerPrivateKey
                  unfreezeBalanceWithResolver:(RCTPromiseResolveBlock)resolve
@@ -953,6 +1077,60 @@ RCT_REMAP_METHOD(unfreezeBalance,
         NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
         NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
         reject(@"Failed to unfreeze balance", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(getOfflineVote,
+                 fromAddress:(NSString *)fromAddress
+                 votes:(NSArray * _Nonnull)votes
+                 getOfflineVoteWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Get data for contract
+        NSData *ownerAddressData = [fromAddress decodedBase58Data];
+        
+        //Create contract votes array
+        NSMutableArray *contractVotes = [NSMutableArray array];
+        for(NSDictionary *vote in votes)
+        {
+            NSString *voteAddress = [vote objectForKey: @"address"];
+            NSData *voteAddressData = [voteAddress decodedBase58Data];
+            NSNumber *voteCount = [vote objectForKey: @"count"];
+            
+            VoteWitnessContract_Vote *contractVote = [VoteWitnessContract_Vote message];
+            contractVote.voteAddress = voteAddressData;
+            contractVote.voteCount = [voteCount longLongValue];
+            [contractVotes addObject: contractVote];
+        }
+        
+        //Create vote witness contract
+        VoteWitnessContract *voteWitnessContract = [VoteWitnessContract message];
+        voteWitnessContract.ownerAddress = ownerAddressData;
+        voteWitnessContract.votesArray = contractVotes;
+        
+        //Attempt to create the transaction using the vote witness contract
+        Transaction * _Nullable transaction = [self _createTransactionWithVoteWitnessContract: voteWitnessContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to get offline vote", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Get base64 encoded string of transaction
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
+        
+        //Return result
+        resolve(base64EncodedTransaction);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to get offline vote", @"Native exception thrown", error);
     }
 }
 
