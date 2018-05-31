@@ -292,6 +292,29 @@ RCT_EXPORT_MODULE();
 #pragma mark Public Native Methods
 #pragma mark
 
+RCT_REMAP_METHOD(setFullNodeHost,
+                 fullNodeHostString:(NSString *)fullNodeHostString
+                 setFullNodeHostResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Set new full node grpc endpoint
+        [GRPCCall useInsecureConnectionsForHost: fullNodeHostString];
+        _wallet = [[Wallet alloc] initWithHost: fullNodeHostString];
+        
+        //Return true
+        resolve(@(true));
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to set full node host", @"Native exception thrown", error);
+    }
+}
+
 RCT_REMAP_METHOD(generateAccount,
                  password:(NSString *)password
                  generateAccountWithResolver:(RCTPromiseResolveBlock)resolve

@@ -9,6 +9,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import TextInputMask from 'react-native-text-input-mask';
 import Overlay from 'react-native-modal-overlay';
 import * as Progress from 'react-native-progress';
+import QRCode from 'react-native-qrcode';
 import Moment from 'moment';
 
 import TronWalletService from '../libs/TronWalletService.js';
@@ -34,13 +35,44 @@ export default class FreezeScreen extends React.Component
     this.setState({ amount: newAmount });
   }
 
+  async onTransactionScanned(transaction) {
+    this.setState({ broadcastingVisible: true, transaction: transaction });
+    await Util.sleep(1000);
+
+    var result = await TronWalletService.broadcastTransaction(transaction);
+    if (result) { this.setState({ broadcastingVisible: false, successVisible: true }); }
+    else { this.setState({ broadcastingVisible: false, failVisible: true }); }
+  }
+
+  onTransactionScanCancel() {
+    this.setState({ failVisible: true });
+  }
+
   async onConfirmPress() {
     this.setState({ confirmVisible: false, freezingVisible: true });
     await Util.sleep(1000);
 
-    var result = await TronWalletService.freezeBalanceFromCurrentWallet(this.state.amount, 3);
-    if(result) { this.setState({ freezingVisible: false, successVisible: true }); }
-    else { this.setState({ freezingVisible: false, failVisible: true }); }
+    if(this.state.walletReadonly)
+    {
+      var transaction = await TronWalletService.getOfflineFreezeBalanceFromCurrentWallet(this.state.amount, 3);
+      if(transaction) { this.setState({ sendingVisible: false, offlineSignVisible: true, transaction: transaction }); }
+      else { this.setState({ freezingVisible: false, failVisible: true, transaction: null }); }
+    }
+    else
+    {
+      var result = await TronWalletService.freezeBalanceFromCurrentWallet(this.state.amount, 3);
+      if(result) { this.setState({ freezingVisible: false, successVisible: true }); }
+      else { this.setState({ freezingVisible: false, failVisible: true }); }
+    }
+  }
+
+  onBroadcastPress() {
+    this.setState({ offlineSignVisible: false })
+    var params = {
+      onBarcodeScanned: this.onTransactionScanned.bind(this),
+      onBarcodeScanCancel: this.onTransactionScanCancel.bind(this)
+    }
+    this.props.navigation.navigate({ routeName: 'HotScanBarcode', params: params });
   }
 
   onBackToPowerPress() {
@@ -53,12 +85,16 @@ export default class FreezeScreen extends React.Component
     super();
 
     var initState = {
-      name: null,
-      address: null,
-      balance: 0.0,
+      walletName : null,
+      walletAddress: null,
+      walletReadonly: false,
+      walletBalance: 0.0,
       amount: 0.0,
+      transaction: null,
       confirmVisible: false,
       freezingVisible: false,
+      offlineSignVisible: false,
+      broadcastingVisible: false,
       successVisible: false,
       failVisible: false
     };
@@ -66,9 +102,10 @@ export default class FreezeScreen extends React.Component
     var currentWallet = TronWalletService.getCurrentWallet();
     if(currentWallet)
     {
-      initState.name = currentWallet.name;
-      initState.address = currentWallet.address;
-      initState.balance = currentWallet.balance;
+      initState.walletName = currentWallet.name;
+      initState.walletAddress = currentWallet.address;
+      initState.walletReadonly = (currentWallet.privateKey === null);
+      initState.walletBalance = currentWallet.balance;
     }
 
     this.state = initState;
@@ -101,7 +138,7 @@ export default class FreezeScreen extends React.Component
                 }}>Amount</Text>
                 {
                   this.state.amount ?
-                    ( this.state.amount <= this.state.balance ?
+                    ( this.state.amount <= this.state.walletBalance ?
                       <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>
@@ -132,7 +169,7 @@ export default class FreezeScreen extends React.Component
             <Button
               onPress={ () => this.setState({ confirmVisible: true }) }
               disabled={ (!this.state.amount ||
-                          this.state.amount > this.state.balance) }
+                          this.state.amount > this.state.walletBalance) }
               buttonStyle={{
                 backgroundColor: '#1aaa55',
                 padding: 5
@@ -172,15 +209,15 @@ export default class FreezeScreen extends React.Component
               <BlockieSvg
                 size={14}
                 scale={1.5}
-                seed={ this.state.address }
+                seed={ this.state.walletAddress }
                 containerStyle={{
                   overflow: 'hidden',
                   marginRight: 5,
                   borderRadius: 3,
               }}/>
-              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.name}</Text>
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.walletName}</Text>
             </View>
-            <Text style={{ fontSize: 12 }}>{ this.state.address }</Text>
+            <Text style={{ fontSize: 12 }}>{ this.state.walletAddress }</Text>
           </View>
           <Ionicons name='ios-arrow-round-down-outline' color='#000000' size={30}/>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>

@@ -114,7 +114,7 @@ export default class SendScreen extends React.Component
     {
       var transaction = await TronWalletService.getOfflineSendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
       if(transaction) { this.setState({ sendingVisible: false, offlineSignVisible: true, transaction: transaction }); }
-      else { this.setState({ signingVisible: false, failVisible: true, transaction: null }); }
+      else { this.setState({ sendingVisible: false, failVisible: true, transaction: null }); }
     }
     else
     {
@@ -153,9 +153,11 @@ export default class SendScreen extends React.Component
         valid: false
       },
       amount: 0.0,
+      transaction: null,
       confirmVisible: false,
       sendingVisible: false,
       offlineSignVisible: false,
+      broadcastingVisible: false,
       successVisible: false,
       failVisible: false
     };

@@ -6,6 +6,7 @@ import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Ionicons, O
 import { Button } from 'react-native-elements';
 import Overlay from 'react-native-modal-overlay';
 import * as Progress from 'react-native-progress';
+import QRCode from 'react-native-qrcode';
 import Moment from 'moment';
 
 import TronWalletService from '../libs/TronWalletService.js';
@@ -31,13 +32,44 @@ export default class PowerScreen extends React.Component
     }
   }
 
+  async onTransactionScanned(transaction) {
+    this.setState({ unfreezeBroadcastingVisible: true, transaction: transaction });
+    await Util.sleep(1000);
+
+    var result = await TronWalletService.broadcastTransaction(transaction);
+    if (result) { this.setState({ unfreezeBroadcastingVisible: false, unfreezeSuccessVisible: true }); }
+    else { this.setState({ unfreezeBroadcastingVisible: false, unfreezeFailVisible: true }); }
+  }
+
+  onTransactionScanCancel() {
+    this.setState({ unfreezeFailVisible: true });
+  }
+
   async onConfirmPress() {
     this.setState({ unfreezeConfirmVisible: false, unfreezingVisible: true });
     await Util.sleep(1000);
 
-    var result = await TronWalletService.unfreezeBalanceFromCurrentWallet();
-    if(result) { this.setState({ unfreezingVisible: false, unfreezeSuccessVisible: true }); }
-    else { this.setState({ unfreezingVisible: false, unfreezeFailVisible: true }); }
+    if(this.state.walletReadonly)
+    {
+      var transaction = await TronWalletService.getOfflineUnfreezeBalanceFromCurrentWallet();
+      if(transaction) { console.log('transaction = ' + transaction); this.setState({ unfreezingVisible: false, unfreezeOfflineSignVisible: true, transaction: transaction }); }
+      else { this.setState({ unfreezingVisible: false, unfreezeFailVisible: true, transaction: null }); }
+    }
+    else
+    {
+      var result = await TronWalletService.unfreezeBalanceFromCurrentWallet();
+      if(result) { this.setState({ unfreezingVisible: false, unfreezeSuccessVisible: true }); }
+      else { this.setState({ unfreezingVisible: false, unfreezeFailVisible: true }); }
+    }
+  }
+
+  onBroadcastPress() {
+    this.setState({ unfreezeOfflineSignVisible: false })
+    var params = {
+      onBarcodeScanned: this.onTransactionScanned.bind(this),
+      onBarcodeScanCancel: this.onTransactionScanCancel.bind(this)
+    }
+    this.props.navigation.navigate({ routeName: 'HotScanBarcode', params: params });
   }
 
   onUnfreezePress() {
@@ -101,13 +133,17 @@ export default class PowerScreen extends React.Component
     super();
 
     var initState = {
-      address: null,
-      name: null,
+      walletName : null,
+      walletAddress: null,
+      walletReadonly: false,
       frozen: [],
       frozenTotal: null,
       bandwidth: null,
+      transaction: null,
       unfreezeConfirmVisible: false,
       unfreezingVisible: false,
+      unfreezeOfflineSignVisible: false,
+      unfreezeBroadcastingVisible: false,
       unfreezeSuccessVisible: false,
       unfreezeFailVisible: false
     };
@@ -122,8 +158,9 @@ export default class PowerScreen extends React.Component
         };
       });
 
-      initState.address = currentWallet.address;
-      initState.name = currentWallet.name;
+      initState.walletName = currentWallet.name;
+      initState.walletAddress = currentWallet.address;
+      initState.walletReadonly = (currentWallet.privateKey === null);
       initState.frozen = frozenBalances;
       initState.frozenTotal = currentWallet.frozenTotal;
       initState.bandwidth = currentWallet.bandwidth.netLimit;
@@ -197,15 +234,15 @@ export default class PowerScreen extends React.Component
               <BlockieSvg
                 size={14}
                 scale={1.5}
-                seed={ this.state.address }
+                seed={ this.state.walletAddress }
                 containerStyle={{
                   overflow: 'hidden',
                   marginRight: 5,
                   borderRadius: 3,
               }}/>
-              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.name}</Text>
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.walletName}</Text>
             </View>
-            <Text style={{ fontSize: 12 }}>{ this.state.address }</Text>
+            <Text style={{ fontSize: 12 }}>{ this.state.walletAddress }</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
             <Button
@@ -247,6 +284,84 @@ export default class PowerScreen extends React.Component
             margin: 0
           }}>
           <Text style={{ fontSize: 18 }}>Unfreezing</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Progress.Bar color='#ca2b1e' indeterminate={true}/>
+            <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.unfreezeOfflineSignVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Sign Transaction</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <View style={{
+              backgroundColor:'#ffffff',
+              borderRadius: 8,
+              padding: 8,
+              marginBottom: 15
+            }}>
+              <QRCode
+                value={ this.state.transaction }
+                size={180}
+                bgColor='#000000'
+                fgColor='#ffffff'/>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <MaterialCommunityIcons name='key-variant' color='#000000' size={24}/>
+              <Text style={{ fontSize: 16, color: '#000000', marginLeft: 5 }}>Offline Signing</Text>
+            </View>
+            <Text style={{ fontSize: 14, color: '#777777', marginBottom: 15 }}>
+              Scan this barcode with a cold wallet to sign the transaction offline.
+              Tap broadcast when cold wallet is ready with the signed transaction barcode.
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <Button
+                onPress={ () => this.setState({ unfreezeOfflineSignVisible: false, transaction: null }) }
+                titleStyle={{ fontSize: 16 }}
+                buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+                containerStyle={{ borderRadius: 8, overflow: 'hidden', marginRight: 10 }}
+                title='Cancel'
+                iconContainerStyle={{ marginRight: 0 }}
+                icon={{
+                  name: 'times',
+                  type: 'font-awesome',
+                  color: '#ffffff',
+                  size: 18
+                }}/>
+              <Button
+                onPress={ this.onBroadcastPress.bind(this) }
+                titleStyle={{ fontSize: 16 }}
+                buttonStyle={{ backgroundColor: '#1aaa55', paddingLeft: 5, paddingRight: 5 }}
+                containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+                title='Broadcast'
+                iconContainerStyle={{ marginRight: 0 }}
+                icon={{
+                  name: 'qrcode',
+                  type: 'font-awesome',
+                  color: '#ffffff',
+                  size: 18
+                }}/>
+            </View>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.unfreezeBroadcastingVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Broadcasting</Text>
           <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
             <Progress.Bar color='#ca2b1e' indeterminate={true}/>
             <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>

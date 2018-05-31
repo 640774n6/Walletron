@@ -37,7 +37,7 @@ import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.Witness;
 
-import org.spongycastle.util.encoders.Hex;
+import org.spongycastle.util.encoders.*;
 
 import io.github.novacrypto.bip39.MnemonicGenerator;
 import io.github.novacrypto.bip39.MnemonicValidator;
@@ -136,6 +136,35 @@ public class TronClientModule extends ReactContextBaseJavaModule
       catch (InterruptedException e) { }
     }
     return response;
+  }
+
+  @ReactMethod
+  public void setFullNodeHost(final String fullNodeHostString, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Create channel
+          channelFull = ManagedChannelBuilder.forTarget(fullNodeHostString)
+            .usePlaintext(true)
+            .build();
+
+          //Create blocking stub
+          blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
+
+          //Return true
+          promise.resolve(true);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to set full node host", "Native exception thrown", e);
+        }
+      }
+    }).start();
   }
 
   @ReactMethod
@@ -449,6 +478,136 @@ public class TronClientModule extends ReactContextBaseJavaModule
   }
 
   @ReactMethod
+  public void signTransaction(final String ownerPrivateKey, final String encodedTransaction, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get key
+          byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+          ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+          //Parse transaction
+          byte[] transactionBytes = org.spongycastle.util.encoders.Base64.decode(encodedTransaction);
+          Transaction transaction = Transaction.parseFrom(transactionBytes);
+          if(transaction == null)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to sign transaction", "Decoder/parser error", null);
+            return;
+          }
+
+          //Set timestamp and sign transaction
+          transaction = TransactionUtils.setTimestamp(transaction);
+          transaction = TransactionUtils.sign(transaction, ownerKey);
+
+          //Get base64 encoded string of signed transaction
+          byte[] signedTransactionBytes = transaction.toByteArray();
+          String base64EncodedTransaction = new String(org.spongycastle.util.encoders.Base64.encode(signedTransactionBytes));
+
+          //Return result
+          promise.resolve(base64EncodedTransaction);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to sign transaction", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void broadcastTransaction(final String encodedTransaction, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Parse transaction
+          byte[] transactionBytes = org.spongycastle.util.encoders.Base64.decode(encodedTransaction);
+          Transaction transaction = Transaction.parseFrom(transactionBytes);
+          if(transaction == null)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to broadcast transaction", "Decoder/parser error", null);
+            return;
+          }
+
+          //Attempt to broadcast the transaction
+          GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
+          if(broadcastResponse == null)
+          {
+            promise.reject("Failed to broadcast transaction", "No/bad resppnse from host for broadcast transaction", null);
+            return;
+          }
+
+          //Return result
+          promise.resolve(broadcastResponse.getCodeValue());
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to broadcast transaction", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void getOfflineSend(final String fromAddress, final String toAddress, final int amount, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get data for contract
+          byte[] ownerAddressBytes = _decode58Check(fromAddress);
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+          byte[] decodedToAddress = _decode58Check(toAddress);
+          ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
+
+          //Create transfer contract
+          Contract.TransferContract transferContract = Contract.TransferContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .setToAddress(toAddressBS)
+            .setAmount(amount * TRX_DROP)
+            .build();
+
+          //Attempt to create the transaction using the transfer contract
+          Transaction transaction = blockingStubFull.createTransaction(transferContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to get offline send", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Get base64 encoded string of signed transaction
+          byte[] transactionBytes = transaction.toByteArray();
+          String base64EncodedTransaction = new String(org.spongycastle.util.encoders.Base64.encode(transactionBytes));
+
+          //Return result
+          promise.resolve(base64EncodedTransaction);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to get offline send", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
   public void send(final String ownerPrivateKey, final String toAddress, final int amount, final Promise promise)
   {
     new Thread(new Runnable()
@@ -509,6 +668,57 @@ public class TronClientModule extends ReactContextBaseJavaModule
   }
 
   @ReactMethod
+  public void getOfflineSendAsset(final String fromAddress, final String toAddress, final String assetName, final int amount, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get data for contract
+          byte[] ownerAddressBytes = _decode58Check(fromAddress);
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+          byte[] decodedToAddress = _decode58Check(toAddress);
+          ByteString toAddressBS = ByteString.copyFrom(decodedToAddress);
+          byte[] assetNameBytes = assetName.getBytes();
+          ByteString assetNameBS = ByteString.copyFrom(assetNameBytes);
+
+          //Create transfer asset contract
+          Contract.TransferAssetContract transferAssetContract = Contract.TransferAssetContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .setToAddress(toAddressBS)
+            .setAssetName(assetNameBS)
+            .setAmount(amount)
+            .build();
+
+          //Attempt to create the transaction using the transfer asset contract
+          Transaction transaction = blockingStubFull.transferAsset(transferAssetContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to get offline send asset", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Get base64 encoded string of signed transaction
+          byte[] transactionBytes = transaction.toByteArray();
+          String base64EncodedTransaction = new String(org.spongycastle.util.encoders.Base64.encode(transactionBytes));
+
+          //Return result
+          promise.resolve(base64EncodedTransaction);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to offline send asset", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
   public void sendAsset(final String ownerPrivateKey, final String toAddress, final String assetName, final int amount, final Promise promise)
   {
     new Thread(new Runnable()
@@ -543,7 +753,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
           if(transaction == null || transaction.getRawData().getContractCount() == 0)
           {
             //Problem creating transaction, reject and return
-            promise.reject("Failed to send token", "No/bad response from host for create transaction", null);
+            promise.reject("Failed to send asset", "No/bad response from host for create transaction", null);
             return;
           }
 
@@ -555,7 +765,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
           GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
           if(broadcastResponse == null)
           {
-            promise.reject("Failed to send token", "No/bad resppnse from host for broadcast transaction", null);
+            promise.reject("Failed to send asset", "No/bad resppnse from host for broadcast transaction", null);
             return;
           }
 
@@ -566,6 +776,52 @@ public class TronClientModule extends ReactContextBaseJavaModule
         {
           //Exception, reject
           promise.reject("Failed to send token", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void getOfflineFreezeBalance(final String fromAddress, final int amount, final int duration, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get data for contract
+          byte[] ownerAddressBytes = _decode58Check(fromAddress);
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+          //Create freeze balance contract
+          Contract.FreezeBalanceContract freezeBalanceContract = Contract.FreezeBalanceContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .setFrozenBalance(amount * TRX_DROP)
+            .setFrozenDuration(duration)
+            .build();
+
+          //Attempt to create the transaction using the freeze balance contract
+          Transaction transaction = blockingStubFull.freezeBalance(freezeBalanceContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to get offline freeze balance", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Get base64 encoded string of signed transaction
+          byte[] transactionBytes = transaction.toByteArray();
+          String base64EncodedTransaction = new String(org.spongycastle.util.encoders.Base64.encode(transactionBytes));
+
+          //Return result
+          promise.resolve(base64EncodedTransaction);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to get offline freeze balance", "Native exception thrown", e);
         }
       }
     }).start();
@@ -630,6 +886,50 @@ public class TronClientModule extends ReactContextBaseJavaModule
   }
 
   @ReactMethod
+  public void getOfflineUnfreezeBalance(final String fromAddress, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get data for contract
+          byte[] ownerAddressBytes = _decode58Check(fromAddress);
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+          //Create unfreeze balance contract
+          Contract.UnfreezeBalanceContract unfreezeBalanceContract = Contract.UnfreezeBalanceContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .build();
+
+          //Attempt to create the transaction using the unfreeze balance contract
+          Transaction transaction = blockingStubFull.unfreezeBalance(unfreezeBalanceContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to get offline unfreeze balance", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Get base64 encoded string of signed transaction
+          byte[] transactionBytes = transaction.toByteArray();
+          String base64EncodedTransaction = new String(org.spongycastle.util.encoders.Base64.encode(transactionBytes));
+
+          //Return result
+          promise.resolve(base64EncodedTransaction);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to get offline unfreeze balance", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
   public void unfreezeBalance(final String ownerPrivateKey, final Promise promise)
   {
     new Thread(new Runnable()
@@ -680,6 +980,70 @@ public class TronClientModule extends ReactContextBaseJavaModule
         {
           //Exception, reject
           promise.reject("Failed to unfreeze balance", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void getOfflineVote(final String fromAddress, final ReadableArray votes, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get data for contract
+          byte[] ownerAddressBytes = _decode58Check(fromAddress);
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+          //Add votes to contract builder
+          List<Contract.VoteWitnessContract.Vote> contractVotes = new ArrayList<Contract.VoteWitnessContract.Vote>();
+          for (int i = 0; i < votes.size(); i++)
+          {
+            ReadableMap voteMap = votes.getMap(i);
+            double voteCount = voteMap.getDouble("count");
+            String voteAddress = voteMap.getString("address");
+            byte[] decodedVoteAddress = _decode58Check(voteAddress);
+            ByteString voteAddressBS = ByteString.copyFrom(decodedVoteAddress);
+
+            Contract.VoteWitnessContract.Vote vote = Contract.VoteWitnessContract.Vote
+              .newBuilder()
+              .setVoteAddress(voteAddressBS)
+              .setVoteCount((long)voteCount)
+              .build();
+
+            contractVotes.add(vote);
+          }
+
+          ///Create vote witness contract
+          Contract.VoteWitnessContract voteWitnessContract = Contract.VoteWitnessContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .addAllVotes(contractVotes)
+            .build();
+
+          //Attempt to create the transaction using the vote witness contract
+          Transaction transaction = blockingStubFull.voteWitnessAccount(voteWitnessContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to get offline vote", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Get base64 encoded string of signed transaction
+          byte[] transactionBytes = transaction.toByteArray();
+          String base64EncodedTransaction = new String(org.spongycastle.util.encoders.Base64.encode(transactionBytes));
+
+          //Return result
+          promise.resolve(base64EncodedTransaction);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to get offline vote", "Native exception thrown", e);
         }
       }
     }).start();

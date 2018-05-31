@@ -4,8 +4,6 @@ import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BarCodeScanner, Permissions } from 'expo';
 
-const TEST_TRANSACTION = 'Cn4KAlTzIggblv1saAM9N0C45YGruyxaZwgBEmMKLXR5cGUuZ29vZ2xlYXBpcy5jb20vcHJvdG9jb2wuVHJhbnNmZXJDb250cmFjdBIyChWgjdt99Z6MMapEuMhS0y0KO/LfhKoSFaA8c8sFZbtmKohwC1zUR9DG6Uc0+hiAiXo=';
-
 export default class ScanBarcodeScreen extends React.Component
 {
   static navigationOptions = ({ navigation }) => {
@@ -17,7 +15,7 @@ export default class ScanBarcodeScreen extends React.Component
         </TouchableOpacity>
       ),
       headerRight: (
-        <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onShouldFlipCamera : null }>
+        <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onFlipCameraPress : null }>
           <Ionicons name='md-reverse-camera' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
         </TouchableOpacity>
       )
@@ -26,11 +24,14 @@ export default class ScanBarcodeScreen extends React.Component
 
   onClosePress() {
     this.setState({ scanning: false });
-    this.props.navigation.state.params.onBarcodeScanCancel();
+
+    if(this.props.navigation.state.params.onBarcodeScanCancel)
+    { this.props.navigation.state.params.onBarcodeScanCancel(); }
+
     this.props.navigation.dispatch(NavigationActions.back());
   }
 
-  onShouldFlipCamera() {
+  onFlipCameraPress() {
     var newFrontOrBack = this.state.frontOrBack === 'front' ? 'back' : 'front';
     this.setState({ frontOrBack: newFrontOrBack });
   }
@@ -39,7 +40,10 @@ export default class ScanBarcodeScreen extends React.Component
     if(this.state.scanning)
     {
       this.setState({ scanning: false });
-      this.props.navigation.state.params.onBarcodeScanned(data);
+
+      if(this.props.navigation.state.params.onBarcodeScanned)
+      { this.props.navigation.state.params.onBarcodeScanned(data); }
+      
       this.props.navigation.dispatch(NavigationActions.back());
     }
   }
@@ -57,7 +61,7 @@ export default class ScanBarcodeScreen extends React.Component
   async componentDidMount()
   {
     this.props.navigation.setParams({ onClosePress: this.onClosePress.bind(this) });
-    this.props.navigation.setParams({ onShouldFlipCamera: this.onShouldFlipCamera.bind(this)  })
+    this.props.navigation.setParams({ onFlipCameraPress: this.onFlipCameraPress.bind(this)  })
 
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
     this.setState({ cameraPermission: (status === 'granted') });

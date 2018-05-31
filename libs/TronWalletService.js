@@ -63,6 +63,17 @@ class TronWalletService {
     this._currentWallet = wallet;
   }
 
+  async setFullNodeHost(fullNodeHostString) {
+    try {
+      var tronClient = NativeModules.TronClient;
+      var result = await tronClient.setFullNodeHost(fullNodeHostString);
+      return result;
+    }
+    catch (error)
+    { console.log(`TronWalletService.setFullNodeHost() => error: ${error}`); }
+    return false;
+  }
+
   async signTransactionFromCurrentWallet(transaction) {
     if(this._currentWallet)
     {
