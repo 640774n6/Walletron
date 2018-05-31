@@ -218,18 +218,26 @@ class TronWalletService {
     }
   }
 
-  async getOfflineSendFromCurrentWallet(toAddress, amount) {
+  async getOfflineSendAssetFromCurrentWallet(toAddress, assetName, amount) {
     if(this._currentWallet)
     {
       try
       {
         var tronClient = NativeModules.TronClient;
-        var offlineSendTransaction = await tronClient.getOfflineSend(this._currentWallet.address, toAddress, amount);
+        if(assetName === 'TRX')
+        {
+          var tronClient = NativeModules.TronClient;
+          var offlineSendTransaction = await tronClient.getOfflineSend(this._currentWallet.address, toAddress, amount);
 
-        return offlineSendTransaction;
+          return offlineSendTransaction;
+        }
+        else
+        {
+          //TODO: Implement offline sending of tokens
+        }
       }
       catch (error)
-      { console.log(`TronWalletService.getOfflineSendFromCurrentWallet() => error: ${error}`); }
+      { console.log(`TronWalletService.getOfflineSendAssetFromCurrentWallet() => error: ${error}`); }
     }
     return null;
   }

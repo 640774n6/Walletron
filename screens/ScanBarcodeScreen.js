@@ -12,7 +12,7 @@ export default class ScanBarcodeScreen extends React.Component
     return {
       title: 'Scan Barcode',
       headerLeft: (
-        <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
+        <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onClosePress : null }>
           <FontAwesome name='close' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>
         </TouchableOpacity>
       ),
@@ -23,6 +23,12 @@ export default class ScanBarcodeScreen extends React.Component
       )
     };
   };
+
+  onClosePress() {
+    this.setState({ scanning: false });
+    this.props.navigation.state.params.onBarcodeScanCancel();
+    this.props.navigation.dispatch(NavigationActions.back());
+  }
 
   onShouldFlipCamera() {
     var newFrontOrBack = this.state.frontOrBack === 'front' ? 'back' : 'front';
@@ -50,6 +56,7 @@ export default class ScanBarcodeScreen extends React.Component
 
   async componentDidMount()
   {
+    this.props.navigation.setParams({ onClosePress: this.onClosePress.bind(this) });
     this.props.navigation.setParams({ onShouldFlipCamera: this.onShouldFlipCamera.bind(this)  })
 
     const { status } = await Permissions.askAsync(Permissions.CAMERA);

@@ -8,6 +8,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import TextInputMask from 'react-native-text-input-mask';
 import Overlay from 'react-native-modal-overlay';
 import * as Progress from 'react-native-progress';
+import QRCode from 'react-native-qrcode';
 
 import TronWalletService from '../libs/TronWalletService.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
@@ -84,7 +85,7 @@ export default class SendScreen extends React.Component
     var params = {
       onBarcodeScanned: this.onAddressScanned.bind(this)
     }
-    this.props.navigation.navigate({ routeName: 'ScanBarcode', params: params });
+    this.props.navigation.navigate({ routeName: 'HotScanBarcode', params: params });
   }
 
   onAddressScanned(address) {
@@ -92,13 +93,44 @@ export default class SendScreen extends React.Component
     this.onRecipientAddressChanged(address);
   }
 
+  async onTransactionScanned(transaction) {
+    this.setState({ broadcastingVisible: true, transaction: transaction });
+    await Util.sleep(1000);
+
+    var result = await TronWalletService.broadcastTransaction(transaction);
+    if (result) { this.setState({ broadcastingVisible: false, successVisible: true }); }
+    else { this.setState({ broadcastingVisible: false, failVisible: true }); }
+  }
+
+  onTransactionScanCancel() {
+    this.setState({ failVisible: true });
+  }
+
   async onConfirmPress() {
     this.setState({ confirmVisible: false, sendingVisible: true });
     await Util.sleep(1000);
 
-    var result = await TronWalletService.sendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
-    if(result) { this.setState({ sendingVisible: false, successVisible: true }); }
-    else { this.setState({ sendingVisible: false, failVisible: true }); }
+    if(this.state.walletReadonly)
+    {
+      var transaction = await TronWalletService.getOfflineSendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
+      if(transaction) { this.setState({ sendingVisible: false, offlineSignVisible: true, transaction: transaction }); }
+      else { this.setState({ signingVisible: false, failVisible: true, transaction: null }); }
+    }
+    else
+    {
+      var result = await TronWalletService.sendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
+      if (result) { this.setState({ sendingVisible: false, successVisible: true }); }
+      else { this.setState({ sendingVisible: false, failVisible: true }); }
+    }
+  }
+
+  onBroadcastPress() {
+    this.setState({ offlineSignVisible: false })
+    var params = {
+      onBarcodeScanned: this.onTransactionScanned.bind(this),
+      onBarcodeScanCancel: this.onTransactionScanCancel.bind(this)
+    }
+    this.props.navigation.navigate({ routeName: 'HotScanBarcode', params: params });
   }
 
   onBackToWalletPress() {
@@ -123,6 +155,7 @@ export default class SendScreen extends React.Component
       amount: 0.0,
       confirmVisible: false,
       sendingVisible: false,
+      offlineSignVisible: false,
       successVisible: false,
       failVisible: false
     };
@@ -377,19 +410,19 @@ export default class SendScreen extends React.Component
             <Text style={{ fontSize: 12 }}>{ this.state.recipient.address }</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-          <Button
-            onPress={ () => this.setState({ confirmVisible: false }) }
-            titleStyle={{ fontSize: 16 }}
-            buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
-            containerStyle={{ borderRadius: 8, overflow: 'hidden', marginRight: 10 }}
-            title='Cancel'
-            iconContainerStyle={{ marginRight: 0 }}
-            icon={{
-              name: 'times',
-              type: 'font-awesome',
-              color: '#ffffff',
-              size: 18
-            }}/>
+            <Button
+              onPress={ () => this.setState({ confirmVisible: false }) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden', marginRight: 10 }}
+              title='Cancel'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'times',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
             <Button
               onPress={ this.onConfirmPress.bind(this) }
               titleStyle={{ fontSize: 16 }}
@@ -416,6 +449,84 @@ export default class SendScreen extends React.Component
             margin: 0
           }}>
           <Text style={{ fontSize: 18 }}>Sending</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Progress.Bar color='#ca2b1e' indeterminate={true}/>
+            <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.offlineSignVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Sign Transaction</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <View style={{
+              backgroundColor:'#ffffff',
+              borderRadius: 8,
+              padding: 8,
+              marginBottom: 15
+            }}>
+              <QRCode
+                value={ this.state.transaction }
+                size={180}
+                bgColor='#000000'
+                fgColor='#ffffff'/>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <MaterialCommunityIcons name='key-variant' color='#000000' size={24}/>
+              <Text style={{ fontSize: 16, color: '#000000', marginLeft: 5 }}>Offline Signing</Text>
+            </View>
+            <Text style={{ fontSize: 14, color: '#777777', marginBottom: 15 }}>
+              Scan this barcode with a cold wallet to sign the transaction offline.
+              Tap broadcast when cold wallet is ready with the signed transaction barcode.
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <Button
+                onPress={ () => this.setState({ offlineSignVisible: false, transaction: null }) }
+                titleStyle={{ fontSize: 16 }}
+                buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+                containerStyle={{ borderRadius: 8, overflow: 'hidden', marginRight: 10 }}
+                title='Cancel'
+                iconContainerStyle={{ marginRight: 0 }}
+                icon={{
+                  name: 'times',
+                  type: 'font-awesome',
+                  color: '#ffffff',
+                  size: 18
+                }}/>
+              <Button
+                onPress={ this.onBroadcastPress.bind(this) }
+                titleStyle={{ fontSize: 16 }}
+                buttonStyle={{ backgroundColor: '#1aaa55', paddingLeft: 5, paddingRight: 5 }}
+                containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+                title='Broadcast'
+                iconContainerStyle={{ marginRight: 0 }}
+                icon={{
+                  name: 'qrcode',
+                  type: 'font-awesome',
+                  color: '#ffffff',
+                  size: 18
+                }}/>
+            </View>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.broadcastingVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Broadcasting</Text>
           <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
             <Progress.Bar color='#ca2b1e' indeterminate={true}/>
             <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>
