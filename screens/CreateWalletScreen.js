@@ -125,11 +125,7 @@ export default class CreateWalletScreen extends React.Component
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#dfdfdf' }}>
         <StatusBar barStyle='light-content'/>
-        <KeyboardAwareScrollView
-          contentContainerStyle={{
-            margin: 15
-          }}
-          enableOnAndroid={true}>
+        <KeyboardAwareScrollView contentContainerStyle={{ margin: 15 }} enableOnAndroid={true}>
           <View style={{
             backgroundColor: '#ffffff',
             borderRadius: 8,

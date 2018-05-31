@@ -62,7 +62,7 @@
       android:name=".experience.ExperienceActivity"
       android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
       android:theme="@style/Theme.Exponent.Light"
-      android:windowSoftInputMode="adjustResize">
+      android:windowSoftInputMode="adjustPan">
     </activity>
 
     <activity
@@ -70,7 +70,7 @@
       android:launchMode="singleTask"
       android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
       android:theme="@style/Theme.Exponent.Splash"
-      android:windowSoftInputMode="adjustResize">
+      android:windowSoftInputMode="adjustPan">
       <intent-filter>
         <data android:scheme="wtron"/>
 
@@ -90,7 +90,7 @@
       android:name=".experience.ShellAppActivity"
       android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
       android:theme="@style/Theme.Exponent.Splash"
-      android:windowSoftInputMode="adjustResize">
+      android:windowSoftInputMode="adjustPan">
       <!-- ADD SHELL INTENT FILTERS HERE -->
     </activity>
 

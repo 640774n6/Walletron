@@ -15,7 +15,7 @@ export default class ScanAddressScreen extends React.Component
         </TouchableOpacity>
       ),
       headerRight: (
-        <TouchableOpacity onPress={ navigation.state.params.onShouldFlipCamera }>
+        <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onShouldFlipCamera : null }>
           <Ionicons name='md-reverse-camera' size={22} color='#ffffff' style={{ marginRight: 15 }}/>
         </TouchableOpacity>
       )

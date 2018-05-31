@@ -115,11 +115,7 @@ export default class ImportWalletScreen extends React.Component
 
   renderImportSeedWordsView() {
     return (
-      <KeyboardAwareScrollView
-        contentContainerStyle={{
-          margin: 15
-        }}
-        enableOnAndroid={true}>
+      <KeyboardAwareScrollView contentContainerStyle={{ margin: 15 }} enableOnAndroid={true}>
         <View style={{
           backgroundColor: '#ffffff',
           borderRadius: 8,
@@ -381,11 +377,7 @@ export default class ImportWalletScreen extends React.Component
 
   renderImportPrivateKeyView() {
     return (
-      <KeyboardAwareScrollView
-        contentContainerStyle={{
-          margin: 15
-        }}
-        enableOnAndroid={true}>
+      <KeyboardAwareScrollView contentContainerStyle={{ margin: 15 }} enableOnAndroid={true}>
         <View style={{
           backgroundColor: '#ffffff',
           borderRadius: 8,

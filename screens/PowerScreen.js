@@ -3,9 +3,13 @@ import { StatusBar, SafeAreaView, Platform, View, FlatList, Text, TouchableOpaci
 import { Icon, ListItem } from 'react-native-elements';
 import { LinearGradient } from 'expo';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Ionicons, Octicons } from '@expo/vector-icons';
+import { Button } from 'react-native-elements';
+import Overlay from 'react-native-modal-overlay';
+import * as Progress from 'react-native-progress';
 import Moment from 'moment';
 
 import TronWalletService from '../libs/TronWalletService.js';
+import BlockieSvg from '../libs/BlockieSvg.js';
 
 export default class PowerScreen extends React.Component
 {
@@ -15,10 +19,10 @@ export default class PowerScreen extends React.Component
       headerLeft: (Platform.OS === 'android' && <View/>),
       headerRight: (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-          <TouchableOpacity onPress={ async() => await TronWalletService.unfreezeBalanceFromCurrentWallet() }>
-            <MaterialCommunityIcons name='fire' color='#ffffff' size={24} style={{ marginRight: 10 }}/>
+          <TouchableOpacity onPress={ navigation.state.params ? navigation.state.params.onUnfreezePress : null }>
+            <MaterialCommunityIcons name='fire' color='#ffffff' size={24} style={{ marginRight: 15 }}/>
           </TouchableOpacity>
-          <TouchableOpacity onPress={ () => navigation.navigate('Send') }>
+          <TouchableOpacity onPress={ () => navigation.navigate('Freeze') }>
             <Ionicons name='md-snow' color='#ffffff' size={24}/>
           </TouchableOpacity>
         </View>
@@ -26,9 +30,16 @@ export default class PowerScreen extends React.Component
     }
   }
 
-  scrollToTop()
-  {
-    this.scrollView.scrollToOffset({ offset: 0, animated: true });
+  async onConfirmPress() {
+    this.setState({ unfreezeConfirmVisible: false, unfreezingVisible: true });
+
+    var result = await TronWalletService.unfreezeBalanceFromCurrentWallet();
+    if(result) { this.setState({ unfreezingVisible: false, unfreezeSuccessVisible: true }); }
+    else { this.setState({ unfreezingVisible: false, unfreezeFailVisible: true }); }
+  }
+
+  onUnfreezePress() {
+    this.setState({ unfreezeConfirmVisible: true });
   }
 
   renderListHeader() {
@@ -67,9 +78,6 @@ export default class PowerScreen extends React.Component
         titleStyle={{ color: '#000000', fontSize: 16 }}
         rightTitle={ Moment(item.expireTime).format('MM/DD/YYYY h:mm A') }
         rightTitleStyle={{ color: '#777777', fontSize: 16, textAlign: 'right' }}
-        icon={{
-          name: ''
-        }}
         hideChevron
         containerStyle={{
           borderTopLeftRadius: index === 0 ? 8 : null,
@@ -93,7 +101,13 @@ export default class PowerScreen extends React.Component
     var initState = {
       address: null,
       name: null,
-      frozen: []
+      frozen: [],
+      frozenTotal: null,
+      bandwidth: null,
+      unfreezeConfirmVisible: false,
+      unfreezingVisible: false,
+      unfreezeSuccessVisible: false,
+      unfreezeFailVisible: false
     };
 
     var currentWallet = TronWalletService.getCurrentWallet();
@@ -114,6 +128,10 @@ export default class PowerScreen extends React.Component
     }
 
     this.state = initState;
+  }
+
+  componentDidMount() {
+    this.props.navigation.setParams({ onUnfreezePress: this.onUnfreezePress.bind(this) });
   }
 
   render()
@@ -148,6 +166,148 @@ export default class PowerScreen extends React.Component
           ListEmptyComponent={ this.renderListEmpty.bind(this) }
           data={ this.state.frozen }
           renderItem={ this.renderListItem.bind(this) }/>
+        <Overlay visible={this.state.unfreezeConfirmVisible}
+          closeOnTouchOutside animationType="zoomIn"
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}
+          animationDuration={200}
+          onClose={ () => this.setState({ unfreezeConfirmVisible: false })}>
+          <Text style={{ fontSize: 18, marginBottom: 30 }}>Unfreeze Confirmation</Text>
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <Ionicons name='md-snow' color='#000000' size={24}/>
+              <Text style={{ fontSize: 16, color: '#000000', marginLeft: 5 }}>Frozen Funds</Text>
+            </View>
+          </View>
+          <Ionicons name='ios-arrow-round-down-outline' color='#000000' size={30}/>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons name='coins' color='#000000' size={22}/>
+            <Text style={{ fontSize: 16, color: '#000000', marginLeft: 5 }}>{ `${this.state.frozenTotal.toFixed(4)} TRX` }</Text>
+          </View>
+          <Ionicons name='ios-arrow-round-down-outline' color='#000000' size={30}/>
+          <View style={{ alignItems: 'center', marginBottom: 30 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+              <BlockieSvg
+                size={14}
+                scale={1.5}
+                seed={ this.state.address }
+                containerStyle={{
+                  overflow: 'hidden',
+                  marginRight: 5,
+                  borderRadius: 3,
+              }}/>
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{this.state.name}</Text>
+            </View>
+            <Text style={{ fontSize: 12 }}>{ this.state.address }</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+            <Button
+              onPress={ () => this.setState({ unfreezeConfirmVisible: false }) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden', marginRight: 10 }}
+              title='Cancel'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'times',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
+            <Button
+              onPress={ this.onConfirmPress.bind(this) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#1aaa55', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              title='Confirm'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'check',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.unfreezingVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Unfreezing</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Progress.Bar color='#ca2b1e' indeterminate={true}/>
+            <Text style={{ fontSize: 14, color: '#777777', marginTop: 15 }}>Please wait...</Text>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.unfreezeSuccessVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Unfreeze Complete</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Ionicons name='ios-checkmark-circle-outline' color='#1aaa55' size={75}/>
+            <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Transaction successful</Text>
+            <Button
+              onPress={ () => this.setState({ unfreezeSuccessVisible: false }) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              title='Back to Power'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'bolt',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
+          </View>
+        </Overlay>
+        <Overlay visible={this.state.unfreezeFailVisible}
+          animationType="zoomIn"
+          animationDuration={200}
+          containerStyle={{ backgroundColor: '#000000aa' }}
+          childrenWrapperStyle={{
+            backgroundColor: '#ffffff',
+            borderRadius: 8,
+            padding: 10,
+            margin: 0
+          }}>
+          <Text style={{ fontSize: 18 }}>Unfreeze Incomplete</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 15, marginBottom: 15 }}>
+            <Ionicons name='ios-close-circle-outline' color='#db3b21' size={75}/>
+            <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Transaction failed</Text>
+            <Button
+              onPress={ () => this.setState({ unfreezeFailVisible: false }) }
+              titleStyle={{ fontSize: 16 }}
+              buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              title='Dismiss'
+              iconContainerStyle={{ marginRight: 0 }}
+              icon={{
+                name: 'times',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 18
+              }}/>
+          </View>
+        </Overlay>
       </SafeAreaView>
     );
   }

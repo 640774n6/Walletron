@@ -18,7 +18,6 @@
     "react-native-modal-overlay": "^1.2.3",
     "react-native-progress": "^3.4.0",
     "react-native-qrcode": "^0.2.6",
-    "react-native-step-indicator": "0.0.8",
     "react-native-tab-view": "0.0.78",
     "react-native-text-input-mask": "^0.7.0",
     "react-navigation": "^2.0.0"

@@ -10,6 +10,7 @@ import NavigationHelper from './libs/NavigationHelper.js';
 import ReceiveScreen from './screens/ReceiveScreen.js';
 import SendScreen from './screens/SendScreen.js';
 import ScanAddressScreen from './screens/ScanAddressScreen.js';
+import FreezeScreen from './screens/FreezeScreen.js';
 import CreateWalletScreen from './screens/CreateWalletScreen.js';
 import ImportWalletScreen from './screens/ImportWalletScreen.js';
 
@@ -17,7 +18,7 @@ import StartScreen from './screens/StartScreen.js';
 import WalletScreen from './screens/WalletScreen.js';
 import PowerScreen from './screens/PowerScreen.js';
 import TransactionsScreen from './screens/TransactionsScreen.js';
-import VoteScreen from './screens/VoteScreen.js';
+import VotesScreen from './screens/VotesScreen.js';
 import SettingsScreen from './screens/SettingsScreen.js';
 
 const defaultStackNavigationOptions = {
@@ -36,7 +37,7 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
   Wallet: createStackNavigator({ WalletRoot: WalletScreen }, { initialRouteName: 'WalletRoot', navigationOptions: defaultStackNavigationOptions }),
   Power: createStackNavigator({ PowerRoot: PowerScreen }, { initialRouteName: 'PowerRoot', navigationOptions: defaultStackNavigationOptions }),
   Transactions: createStackNavigator({ TransactionsRoot: TransactionsScreen }, { initialRouteName: 'TransactionsRoot', navigationOptions: defaultStackNavigationOptions }),
-  Vote: createStackNavigator({ VoteRoot: VoteScreen }, { initialRouteName: 'VoteRoot', navigationOptions: defaultStackNavigationOptions }),
+  Votes: createStackNavigator({ VotesRoot: VotesScreen }, { initialRouteName: 'VotesRoot', navigationOptions: defaultStackNavigationOptions }),
   Settings: createStackNavigator({ SettingsRoot: SettingsScreen }, { initialRouteName: 'SettingsRoot', navigationOptions: defaultStackNavigationOptions })
 },
 {
@@ -56,7 +57,7 @@ const MainScreenBottomTabNavigator = createBottomTabNavigator(
         case 'Transactions':
           iconElement = (<FontAwesome name='exchange' color={tintColor} size={22} />);
           break;
-        case 'Vote':
+        case 'Votes':
           iconElement = (<FontAwesome name='legal' color={tintColor} size={22} />);
           break;
         case 'Settings':
@@ -94,7 +95,8 @@ const MainNavigator = createStackNavigator(
   MainRoot: MainScreenBottomTabNavigator,
   Send: createStackNavigator({ SendRoot: SendScreen }, { initialRouteName: 'SendRoot', navigationOptions: defaultStackNavigationOptions }),
   Receive: createStackNavigator({ ReceiveRoot: ReceiveScreen }, { initialRouteName: 'ReceiveRoot', navigationOptions: defaultStackNavigationOptions }),
-  ScanAddress: createStackNavigator({ ScanAddressRoot: ScanAddressScreen }, { initialRouteName: 'ScanAddressRoot', navigationOptions: defaultStackNavigationOptions })
+  ScanAddress: createStackNavigator({ ScanAddressRoot: ScanAddressScreen }, { initialRouteName: 'ScanAddressRoot', navigationOptions: defaultStackNavigationOptions }),
+  Freeze: createStackNavigator({ FreezeRoot: FreezeScreen }, { initialRouteName: 'FreezeRoot', navigationOptions: defaultStackNavigationOptions })
 },
 {
   initialRouteName: 'MainRoot',

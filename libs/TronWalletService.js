@@ -69,7 +69,8 @@ class TronWalletService {
       var addressValid = await tronClient.validateAddress(address);
       return addressValid;
     }
-    catch (error) { }
+    catch (error)
+    { console.log(`TronWalletService.validateAddress() => error: ${error}`); }
     return false;
   }
 
@@ -79,7 +80,8 @@ class TronWalletService {
       var generatedAccount = await tronClient.generateAccount(password);
       return generatedAccount;
     }
-    catch (error) { }
+    catch (error)
+    { console.log(`TronWalletService.generateAccount() => error: ${error}`); }
     return null;
   }
 
@@ -89,7 +91,8 @@ class TronWalletService {
       var restoredAccount = await tronClient.restoreAccountFromMnemonics(mnemonics, password);
       return restoredAccount;
     }
-    catch (error) { }
+    catch (error)
+    { console.log(`TronWalletService.restoreAccountFromMnemonics() => error: ${error}`); }
     return null;
   }
 
@@ -100,7 +103,8 @@ class TronWalletService {
       var restoredAccount = await tronClient.restoreAccountFromPrivateKey(privateKey);
       return restoredAccount;
     }
-    catch (error) { }
+    catch (error)
+    { console.log(`TronWalletService.restoreAccountFromPrivateKey() => error: ${error}`); }
     return null;
   }
 
@@ -165,6 +169,45 @@ class TronWalletService {
     return false;
   }
 
+  async voteFromCurrentWallet(votes) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var result = await tronClient.vote(this._currentWallet.privateKey, votes);
+
+        console.log(`TronWalletService.voteFromCurrentWallet() => result: ${result}`);
+        return (result === 0);
+      }
+      catch (error)
+      { console.log(`TronWalletService.voteFromCurrentWallet() => error: ${error}`); }
+    }
+  }
+
+  async getWitnesses() {
+    try
+    {
+      var tronClient = NativeModules.TronClient;
+      var result = await tronClient.getWitnesses();
+      return result;
+    }
+    catch (error)
+    { console.log(`TronWalletService.getWitnesses() => error: ${error}`); }
+
+    return null;
+  }
+
+  getVoteCountForAddress(address) {
+    if(this._currentWallet)
+    {
+      var vote = this._currentWallet.votes.find(function(vote) { return vote.address === address; });
+      if(vote)
+      { return vote.count; }
+    }
+    return null;
+  }
+
   async updateCurrentWallet() {
     if(this._currentWallet)
     {
@@ -176,6 +219,8 @@ class TronWalletService {
         this._currentWallet.frozen = account.frozen;
         this._currentWallet.frozenTotal = account.frozenTotal;
         this._currentWallet.bandwidth = account.bandwidth;
+        this._currentWallet.votes = account.votes;
+        this._currentWallet.votesTotal = account.votesTotal;
         this._currentWallet.timestamp = Date.now;
         await this.save();
         return true;

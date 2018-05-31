@@ -91,10 +91,6 @@ export default class SendScreen extends React.Component
     this.onRecipientAddressChanged(address);
   }
 
-  onSendPress() {
-    this.setState({ confirmVisible: true });
-  }
-
   async onConfirmPress() {
     this.setState({ confirmVisible: false, sendingVisible: true });
 
@@ -157,11 +153,7 @@ export default class SendScreen extends React.Component
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#dfdfdf' }}>
         <StatusBar barStyle='light-content'/>
-        <KeyboardAwareScrollView
-          contentContainerStyle={{
-            margin: 15
-          }}
-          enableOnAndroid={true}>
+        <KeyboardAwareScrollView contentContainerStyle={{ margin: 15 }} enableOnAndroid={true}>
           <ModalDropdown
             options={ this.state.tokens }
             animated={false}
@@ -218,12 +210,16 @@ export default class SendScreen extends React.Component
                 <Text style={{
                   color: '#000000',
                   fontSize: 18
-                }}>Recipient Address</Text>
+                }}>Recipient</Text>
                 {
                   this.state.recipient.address ?
-                    (this.state.recipient.valid ?
+                    ( this.state.recipient.valid ?
                       <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 5 }}>
+                        <FontAwesome name='exclamation-circle' size={18} color='#db3b21'/>
+                        <Text style={{ fontSize: 14, color: '#db3b21', marginLeft: 5 }}>Invalid address</Text>
+                      </View>
+                    )
                     : null
                 }
               </View>
@@ -273,9 +269,13 @@ export default class SendScreen extends React.Component
                 }}>Amount</Text>
                 {
                   this.state.amount ?
-                    (this.state.amount <= this.state.token.balance ?
+                    ( this.state.amount <= this.state.token.balance ?
                       <FontAwesome name='check-circle' size={18} color='#1aaa55' style={{ marginLeft: 5 }}/> :
-                      <FontAwesome name='exclamation-circle' size={18} color='#db3b21' style={{ marginLeft: 5 }}/>)
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 5 }}>
+                        <FontAwesome name='exclamation-circle' size={18} color='#db3b21'/>
+                        <Text style={{ fontSize: 14, color: '#db3b21', marginLeft: 5 }}>Exceeds available balance</Text>
+                      </View>
+                    )
                     : null
                 }
               </View>
@@ -297,31 +297,32 @@ export default class SendScreen extends React.Component
               placeholder={ `Amount of ${this.state.token.name} to send` }
               mask='[09999999999].[9999]'
               onChangeText={ this.onAmountChanged.bind(this) }/>
+            <Button
+              onPress={ () => this.setState({ confirmVisible: true }) }
+              disabled={ (!this.state.recipient.valid ||
+                          !this.state.amount ||
+                          this.state.amount > this.state.token.balance) }
+              buttonStyle={{
+                backgroundColor: '#1aaa55',
+                padding: 5
+              }}
+              disabledStyle={{
+                backgroundColor: '#bbbbbb',
+                padding: 5
+              }}
+              containerStyle={{
+                borderRadius: 8,
+                overflow: 'hidden',
+                marginTop: 15
+              }}
+              title='Send'
+              icon={{
+                name: 'send',
+                type: 'font-awesome',
+                color: '#ffffff',
+                size: 22
+              }}/>
           </View>
-          <Button
-            onPress={ this.onSendPress.bind(this) }
-            disabled={ (!this.state.recipient.valid ||
-                        !this.state.amount ||
-                        this.state.amount > this.state.token.balance) }
-            buttonStyle={{
-              backgroundColor: '#1aaa55',
-              padding: 5
-            }}
-            disabledStyle={{
-              backgroundColor: '#bbbbbb',
-              padding: 5
-            }}
-            containerStyle={{
-              borderRadius: 8,
-              overflow: 'hidden'
-            }}
-            title='Send'
-            icon={{
-              name: 'send',
-              type: 'font-awesome',
-              color: '#ffffff',
-              size: 22
-            }}/>
         </KeyboardAwareScrollView>
         <Overlay visible={this.state.confirmVisible}
           closeOnTouchOutside animationType="zoomIn"

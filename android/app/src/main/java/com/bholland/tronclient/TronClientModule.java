@@ -1,6 +1,7 @@
 package com.bholland.tronclient;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -10,6 +11,8 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableArray;
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
@@ -29,8 +32,10 @@ import org.tron.common.utils.*;
 import org.tron.protos.Contract;
 import org.tron.protos.Protocol.Account;
 import org.tron.protos.Protocol.Account.Frozen;
+import org.tron.protos.Protocol.Vote;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.Transaction;
+import org.tron.protos.Protocol.Witness;
 
 import org.spongycastle.util.encoders.Hex;
 
@@ -59,6 +64,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
   "47.91.216.69:50051",
   "39.106.220.120:50051"
   */
+  private static final String TAG = "TronClient";
   private static final String HOST_ADDRESS = "52.14.86.232:50051";
   private static final int TRX_DROP = 1000000;
   private static final int DECODED_PUBKEY_LENGTH = 21;
@@ -323,6 +329,25 @@ public class TronClientModule extends ReactContextBaseJavaModule
           bandwidthStats.putDouble("netUsed", accountNetworkStats.getNetUsed());
           bandwidthStats.putDouble("netLimit", accountNetworkStats.getNetLimit());
 
+          //Parse votes
+          long votesTotal = 0;
+          List<Vote> votesList = responseAccount.getVotesList();
+          WritableArray returnVotes = Arguments.createArray();
+          for (Vote vote : votesList)
+          {
+            votesTotal += vote.getVoteCount();
+
+            ByteString voteAddressBS = vote.getVoteAddress();
+            byte[] voteAddressBytes = new byte[voteAddressBS.size()];
+            voteAddressBS.copyTo(voteAddressBytes, 0);
+            String voteAddress = _encode58Check(voteAddressBytes);
+
+            WritableMap voteMap = Arguments.createMap();
+            voteMap.putString("address", voteAddress);
+            voteMap.putDouble("count", (double)vote.getVoteCount());
+            returnVotes.pushMap(voteMap);
+          }
+
           //Parse tokens
           Map<String, Long> responseAssetMap = responseAccount.getAssetMap();
           WritableArray returnAssets = Arguments.createArray();
@@ -357,6 +382,8 @@ public class TronClientModule extends ReactContextBaseJavaModule
           returnAccountMap.putArray("frozen", returnFrozenBalances);
           returnAccountMap.putDouble("frozenTotal", (frozenTotal / TRX_DROP));
           returnAccountMap.putMap("bandwidth", bandwidthStats);
+          returnAccountMap.putArray("votes", returnVotes);
+          returnAccountMap.putDouble("votesTotal", votesTotal);
 
           //Return account map
           promise.resolve(returnAccountMap);
@@ -365,6 +392,57 @@ public class TronClientModule extends ReactContextBaseJavaModule
         {
           //Exception, reject
           promise.reject("Failed to get account", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void getWitnesses(final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Attempt to get witness list
+          WitnessList witnessList = blockingStubFull.listWitnesses(EmptyMessage.newBuilder().build());
+          if(witnessList == null)
+          {
+            //No response, reject and return
+            promise.reject("Failed to get witnesses", "No response from host for get witnesses", null);
+            return;
+          }
+
+          //Parse witnesses
+          List<Witness> witnesses = witnessList.getWitnessesList();
+          WritableArray returnWitnesses = Arguments.createArray();
+          for (Witness witness : witnesses)
+          {
+            ByteString witnessAddressBS = witness.getAddress();
+            byte[] witnessAddressBytes = new byte[witnessAddressBS.size()];
+            witnessAddressBS.copyTo(witnessAddressBytes, 0);
+            String witnessAddress = _encode58Check(witnessAddressBytes);
+
+            WritableMap witnessMap = Arguments.createMap();
+            witnessMap.putString("address", witnessAddress);
+            witnessMap.putString("url", witness.getUrl());
+            witnessMap.putDouble("voteCount", (double)witness.getVoteCount());
+            witnessMap.putDouble("totalProduced", (double)witness.getTotalProduced());
+            witnessMap.putDouble("totalMissed", (double)witness.getTotalMissed());
+            witnessMap.putDouble("latestBlockNum", (double)witness.getLatestBlockNum());
+            witnessMap.putDouble("latestSlotNum", (double)witness.getLatestSlotNum());
+            returnWitnesses.pushMap(witnessMap);
+          }
+
+          //Return witnesses
+          promise.resolve(returnWitnesses);
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to get witnesses", "Native exception thrown", e);
         }
       }
     }).start();
@@ -514,7 +592,7 @@ public class TronClientModule extends ReactContextBaseJavaModule
           Contract.FreezeBalanceContract freezeBalanceContract = Contract.FreezeBalanceContract
             .newBuilder()
             .setOwnerAddress(ownerAddressBS)
-            .setFrozenBalance(amount)
+            .setFrozenBalance(amount * TRX_DROP)
             .setFrozenDuration(duration)
             .build();
 
@@ -602,6 +680,82 @@ public class TronClientModule extends ReactContextBaseJavaModule
         {
           //Exception, reject
           promise.reject("Failed to unfreeze balance", "Native exception thrown", e);
+        }
+      }
+    }).start();
+  }
+
+  @ReactMethod
+  public void vote(final String ownerPrivateKey, final ReadableArray votes, final Promise promise)
+  {
+    new Thread(new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          //Get key
+          byte[] ownerPrivateKeyBytes = ByteArray.fromHexString(ownerPrivateKey);
+          ECKey ownerKey = ECKey.fromPrivate(ownerPrivateKeyBytes);
+
+          //Get data for contract
+          byte[] ownerAddressBytes = ownerKey.getAddress();
+          ByteString ownerAddressBS = ByteString.copyFrom(ownerAddressBytes);
+
+          //Add votes to contract builder
+          List<Contract.VoteWitnessContract.Vote> contractVotes = new ArrayList<Contract.VoteWitnessContract.Vote>();
+          for (int i = 0; i < votes.size(); i++)
+          {
+            ReadableMap voteMap = votes.getMap(i);
+            double voteCount = voteMap.getDouble("count");
+            String voteAddress = voteMap.getString("address");
+            byte[] decodedVoteAddress = _decode58Check(voteAddress);
+            ByteString voteAddressBS = ByteString.copyFrom(decodedVoteAddress);
+
+            Contract.VoteWitnessContract.Vote vote = Contract.VoteWitnessContract.Vote
+              .newBuilder()
+              .setVoteAddress(voteAddressBS)
+              .setVoteCount((long)voteCount)
+              .build();
+
+            contractVotes.add(vote);
+          }
+
+          ///Create vote witness contract
+          Contract.VoteWitnessContract voteWitnessContract = Contract.VoteWitnessContract
+            .newBuilder()
+            .setOwnerAddress(ownerAddressBS)
+            .addAllVotes(contractVotes)
+            .build();
+
+          //Attempt to create the transaction using the vote witness contract
+          Transaction transaction = blockingStubFull.voteWitnessAccount(voteWitnessContract);
+          if(transaction == null || transaction.getRawData().getContractCount() == 0)
+          {
+            //Problem creating transaction, reject and return
+            promise.reject("Failed to vote", "No/bad response from host for create transaction", null);
+            return;
+          }
+
+          //Set timestamp and sign transaction
+          transaction = TransactionUtils.setTimestamp(transaction);
+          transaction = TransactionUtils.sign(transaction, ownerKey);
+
+          //Attempt to broadcast the transaction
+          GrpcAPI.Return broadcastResponse = _broadcastTransaction(transaction);
+          if(broadcastResponse == null)
+          {
+            promise.reject("Failed to vote", "No/bad resppnse from host for broadcast transaction", null);
+            return;
+          }
+
+          //Return result
+          promise.resolve(broadcastResponse.getCodeValue());
+        }
+        catch(Exception e)
+        {
+          //Exception, reject
+          promise.reject("Failed to vote", "Native exception thrown", e);
         }
       }
     }).start();

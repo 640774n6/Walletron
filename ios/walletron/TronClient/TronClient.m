@@ -40,7 +40,7 @@ RCT_EXPORT_MODULE();
 { return NO; }
 
 #pragma mark -
-#pragma mark Private Methods
+#pragma mark Create Transaction Methods
 #pragma mark
 
 - (Transaction * _Nullable) _createTransactionWithTransferContract: (TransferContract *) transferContract
@@ -139,6 +139,34 @@ RCT_EXPORT_MODULE();
     return returnTransaction;
 }
 
+- (Transaction * _Nullable) _createTransactionWithVoteWitnessContract: (VoteWitnessContract *) voteWitnessContract
+{
+    //Declare variables
+    __block Transaction * _Nullable returnTransaction = nil;
+    
+    //Attempt to create the transaction using the vote witness contract
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet voteWitnessAccountWithRequest: voteWitnessContract handler:^(Transaction * _Nullable transaction, NSError * _Nullable error)
+    {
+        //If we got a valid response
+        if(transaction && transaction.rawData.contractArray_Count > 0)
+        { returnTransaction = transaction; }
+         
+        //Signal that create transaction is finished
+        dispatch_semaphore_signal(sema);
+    }];
+    
+    //Wait for create transaction to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return transaction
+    return returnTransaction;
+}
+
+#pragma mark -
+#pragma mark Private Methods
+#pragma mark
+
 - (Return * _Nullable) _broadcastTransaction: (Transaction * _Nullable) transaction
 {
     //Declare variables
@@ -227,11 +255,35 @@ RCT_EXPORT_MODULE();
         dispatch_semaphore_signal(sema);
     }];
     
-    //Wait for create transaction to finish
+    //Wait for get account to finish
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
     
     //Return account
     return returnAccount;
+}
+
+- (WitnessList * _Nullable) _getWitnesses
+{
+    //Declare variables
+    __block WitnessList * _Nullable returnWitnessList = nil;
+    
+    //Attempt to get the witnesses
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [_wallet listWitnessesWithRequest: [EmptyMessage message] handler:^(WitnessList * _Nullable witnessListResponse, NSError * _Nullable error)
+    {
+        //If we got a valid response
+        if(witnessListResponse)
+        { returnWitnessList = witnessListResponse; }
+         
+        //Signal that get witnesses is finished
+        dispatch_semaphore_signal(sema);
+    }];
+    
+    //Wait for get witnesses to finish
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    
+    //Return witnesses
+    return returnWitnessList;
 }
 
 #pragma mark -
@@ -397,6 +449,18 @@ RCT_REMAP_METHOD(getAccount,
             @"netLimit": @(accountNetworkStats.netLimit)
         };
         
+        //Create list of votes
+        int64_t votesTotal = 0;
+        NSMutableArray *votes = [NSMutableArray arrayWithCapacity: responseAccount.votesArray_Count];
+        for(Vote *vote in responseAccount.votesArray)
+        {
+            votesTotal += vote.voteCount;
+            
+            NSString *voteAddress = [NSString encodedBase58StringWithData: vote.voteAddress];
+            NSDictionary *voteDict = @{ @"address" : voteAddress, @"count": @(vote.voteCount) };
+            [votes addObject: voteDict];
+        }
+        
         //Create list of assets
         NSMutableArray *assets = [NSMutableArray arrayWithCapacity: responseAccount.asset_Count];
         [responseAccount.asset enumerateKeysAndInt64sUsingBlock:^(NSString * _Nonnull key, int64_t value, BOOL * _Nonnull stop)
@@ -428,7 +492,9 @@ RCT_REMAP_METHOD(getAccount,
             @"assets": assets,
             @"frozen": frozenBalances,
             @"frozenTotal": @((frozenTotal / kTronClientTrxDrop)),
-            @"bandwidth": bandwidthStats
+            @"bandwidth": bandwidthStats,
+            @"votes": votes,
+            @"votesTotal": @(votesTotal)
         };
         
         //Return the account dictionary
@@ -440,6 +506,51 @@ RCT_REMAP_METHOD(getAccount,
         NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
         NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
         reject(@"Failed to get account", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(getWitnesses,
+                 getWitnessesWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Attempt to get the witnesses
+        WitnessList * _Nullable witnesses = [self _getWitnesses];
+        if(!witnesses)
+        {
+            //No response, reject and return
+            reject(@"Failed to get witnesses", @"No response from host for get witnesses", nil);
+            return;
+        }
+        
+        //Create list of witnesses
+        NSMutableArray *returnWitnesses = [NSMutableArray arrayWithCapacity: witnesses.witnessesArray_Count];
+        for(Witness *witness in witnesses.witnessesArray)
+        {
+            NSString *witnessAddress = [NSString encodedBase58StringWithData: witness.address];
+            NSDictionary *witnessDict =
+            @{
+                @"address": witnessAddress,
+                @"url": witness.URL,
+                @"voteCount": @(witness.voteCount),
+                @"totalProduced": @(witness.totalProduced),
+                @"totalMissed": @(witness.totalMissed),
+                @"latestBlockNum": @(witness.latestBlockNum),
+                @"latestSlotNum": @(witness.latestSlotNum)
+            };
+            [returnWitnesses addObject: witnessDict];
+        }
+        
+        //Return the witnesses array
+        resolve(returnWitnesses);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to get witnesses", @"Native exception thrown", error);
     }
 }
 
@@ -562,7 +673,7 @@ RCT_REMAP_METHOD(sendAsset,
         if(!broadcastResponse)
         {
             //Problem broadcasting transaction, reject and return
-            reject(@"Failed to send token", @"No/bad resppnse from host for broadcast transaction", nil);
+            reject(@"Failed to send token", @"No/bad response from host for broadcast transaction", nil);
             return;
         }
         
@@ -602,7 +713,7 @@ RCT_REMAP_METHOD(freezeBalance,
         //Create freeze balance contract
         FreezeBalanceContract *freezeBalanceContract = [FreezeBalanceContract message];
         freezeBalanceContract.ownerAddress = ownerAddressData;
-        freezeBalanceContract.frozenBalance = [amount longLongValue];
+        freezeBalanceContract.frozenBalance = ([amount longLongValue] * kTronClientTrxDrop);
         freezeBalanceContract.frozenDuration = [duration longLongValue];
         
         //Attempt to create the transaction using the freeze balance contract
@@ -627,7 +738,7 @@ RCT_REMAP_METHOD(freezeBalance,
         if(!broadcastResponse)
         {
             //Problem broadcasting transaction, reject and return
-            reject(@"Failed to freeze balance", @"No/bad resppnse from host for broadcast transaction", nil);
+            reject(@"Failed to freeze balance", @"No/bad response from host for broadcast transaction", nil);
             return;
         }
         
@@ -688,7 +799,7 @@ RCT_REMAP_METHOD(unfreezeBalance,
         if(!broadcastResponse)
         {
             //Problem broadcasting transaction, reject and return
-            reject(@"Failed to unfreeze balance", @"No/bad resppnse from host for broadcast transaction", nil);
+            reject(@"Failed to unfreeze balance", @"No/bad response from host for broadcast transaction", nil);
             return;
         }
         
@@ -701,6 +812,83 @@ RCT_REMAP_METHOD(unfreezeBalance,
         NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
         NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
         reject(@"Failed to unfreeze balance", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(vote,
+                 ownerPrivateKey:(NSString *)ownerPrivateKey
+                 votes:(NSArray * _Nonnull)votes
+                 voteWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Create tron signature for private key, then verify it is valid
+        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
+        if(!tronSignature.valid)
+        {
+            //Signature is invalid, reject and return
+            reject(@"Failed to vote", @"Owner private key invalid", nil);
+            return;
+        }
+        
+        //Get data for contract
+        NSData *ownerAddressData = [tronSignature.address decodedBase58Data];
+        
+        //Create contract votes array
+        NSMutableArray *contractVotes = [NSMutableArray array];
+        for(NSDictionary *vote in votes)
+        {
+            NSString *voteAddress = [vote objectForKey: @"address"];
+            NSData *voteAddressData = [voteAddress decodedBase58Data];
+            NSNumber *voteCount = [vote objectForKey: @"count"];
+            
+            VoteWitnessContract_Vote *contractVote = [VoteWitnessContract_Vote message];
+            contractVote.voteAddress = voteAddressData;
+            contractVote.voteCount = [voteCount longLongValue];
+            [contractVotes addObject: contractVote];
+        }
+        
+        //Create vote witness contract
+        VoteWitnessContract *voteWitnessContract = [VoteWitnessContract message];
+        voteWitnessContract.ownerAddress = ownerAddressData;
+        voteWitnessContract.votesArray = contractVotes;
+        
+        //Attempt to create the transaction using the vote witness contract
+        Transaction * _Nullable transaction = [self _createTransactionWithVoteWitnessContract: voteWitnessContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to vote", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Set transaction timestamp and get signature
+        transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);
+        NSData *signatureData = [tronSignature sign: transaction.rawData.data];
+        
+        //Add signature for each contract in transaction (Each contract could have a different signature in the future)
+        for(int i = 0; i < transaction.rawData.contractArray_Count; i++)
+        { [transaction.signatureArray addObject: signatureData]; }
+        
+        //Attempt to broadcast the transaction
+        Return * _Nullable broadcastResponse = [self _broadcastTransaction: transaction numberOfRetries: 10];
+        if(!broadcastResponse)
+        {
+            //Problem broadcasting transaction, reject and return
+            reject(@"Failed to vote", @"No/bad response from host for broadcast transaction", nil);
+            return;
+        }
+        
+        //Return result
+        resolve(@(broadcastResponse.code));
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to vote", @"Native exception thrown", error);
     }
 }
 

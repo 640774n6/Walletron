@@ -134,20 +134,12 @@ export default class WalletScreen extends React.Component {
       var currentWallet = TronWalletService.getCurrentWallet();
       if(currentWallet)
       {
-        /*var tokens = currentWallet.assets.map(asset => {
+        var tokens = currentWallet.assets.map(asset => {
           return {
             name: asset.name,
             balance: parseFloat(asset.balance)
           };
-        });*/
-        var tokens = [];
-        for(var i = 0; i < 100; i++)
-        {
-          tokens.push({
-            name: 'Awesome Token',
-            balance: 100.0
-          });
-        }
+        });
 
         this.setState({
           address: currentWallet.address,
@@ -170,7 +162,7 @@ export default class WalletScreen extends React.Component {
 
   scrollToTop()
   {
-    this.scrollView.scrollToOffset({ offset: 0, animated: true });
+    this.scrollView.scrollTo({ y: 0, animated: true });
   }
 
   renderListHeader() {
@@ -248,21 +240,20 @@ export default class WalletScreen extends React.Component {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#dfdfdf' }}>
         <StatusBar barStyle='light-content'/>
-        <FlatList
+        <ScrollView
           ref={ ref => this.scrollView = ref }
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingTop: HEADER_MAX_HEIGHT }}
           scrollIndicatorInsets={{ top: HEADER_MAX_HEIGHT }}
-          removeClippedSubviews={ Platform.OS === 'android' }
           scrollEventThrottle={ 16 }
-          onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }
-          windowSize={ 31 }
-          initialNumToRender={ 4 }
-          keyExtractor={ (item, index) => index.toString() }
-          ListHeaderComponent={ this.renderListHeader.bind(this) }
-          ListEmptyComponent={ this.renderListEmpty.bind(this) }
-          data={ this.state.tokens }
-          renderItem={ this.renderListItem.bind(this) }/>
+          onScroll={ Animated.event([{ nativeEvent: { contentOffset: { y: this.scrollYAnimatedValue }}}], { userNativeDriver: true }) }>
+          <FlatList
+            keyExtractor={ (item, index) => index.toString() }
+            ListHeaderComponent={ this.renderListHeader.bind(this) }
+            ListEmptyComponent={ this.renderListEmpty.bind(this) }
+            data={ this.state.tokens }
+            renderItem={ this.renderListItem.bind(this) }/>
+        </ScrollView>
         <Animated.View
           style={{
             height: headerHeight,
