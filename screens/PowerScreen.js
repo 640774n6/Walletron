@@ -10,6 +10,7 @@ import Moment from 'moment';
 
 import TronWalletService from '../libs/TronWalletService.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
+import Util from '../libs/Util.js';
 
 export default class PowerScreen extends React.Component
 {
@@ -32,6 +33,7 @@ export default class PowerScreen extends React.Component
 
   async onConfirmPress() {
     this.setState({ unfreezeConfirmVisible: false, unfreezingVisible: true });
+    await Util.sleep(1000);
 
     var result = await TronWalletService.unfreezeBalanceFromCurrentWallet();
     if(result) { this.setState({ unfreezingVisible: false, unfreezeSuccessVisible: true }); }

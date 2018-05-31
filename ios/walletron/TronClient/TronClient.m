@@ -8,6 +8,8 @@
 #import <TronProtocol/core/Contract.pbobjc.h>
 #import <TronProtocol/core/Tron.pbobjc.h>
 
+#import <NSData+FastHex/NSData+FastHex.h>
+
 #import "Categories/NSString+Base58.h"
 #import "TronSignature.h"
 
@@ -554,6 +556,143 @@ RCT_REMAP_METHOD(getWitnesses,
     }
 }
 
+RCT_REMAP_METHOD(signTransaction,
+                 ownerPrivateKey: (NSString *) ownerPrivateKey
+                 encodedTransaction:(NSString *)encodedTransaction
+                 signTransactionWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Create tron signature for private key, then verify it is valid
+        TronSignature *tronSignature = [TronSignature signatureWithPrivateKey: ownerPrivateKey];
+        if(!tronSignature.valid)
+        {
+            //Signature is invalid, reject and return
+            reject(@"Failed to sign transaction", @"Owner private key invalid", nil);
+            return;
+        }
+        
+        //Decode base64 encoded string to data
+        NSData *transactionData = [[NSData alloc] initWithBase64EncodedString: encodedTransaction options: NSDataBase64DecodingIgnoreUnknownCharacters];
+        
+        //Attempt to parse transaction from data
+        NSError *transactionParseError = nil;
+        Transaction *transaction = [Transaction parseFromData: transactionData error: &transactionParseError];
+        if(!transaction || transactionParseError)
+        {
+            //Problem decoding/parsing transaction, reject and return
+            reject(@"Failed to sign transaction", @"Decoder/parser error", nil);
+            return;
+        }
+        
+        //Set transaction timestamp and get signature
+        transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);
+        NSData *signatureData = [tronSignature sign: transaction.rawData.data];
+        
+        //Add signature for each contract in transaction (Each contract could have a different signature in the future)
+        for(int i = 0; i < transaction.rawData.contractArray_Count; i++)
+        { [transaction.signatureArray addObject: signatureData]; }
+        
+        //Get base64 encoded string of signed transaction
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
+        
+        //Return result
+        resolve(base64EncodedTransaction);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to sign transaction", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(broadcastTransaction,
+                 encodedTransaction:(NSString *)encodedTransaction
+                 broadcastTransactionWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Decode base64 encoded string to data
+        NSData *transactionData = [[NSData alloc] initWithBase64EncodedString: encodedTransaction options: NSDataBase64DecodingIgnoreUnknownCharacters];
+        
+        //Attempt to parse transaction from data
+        NSError *transactionParseError = nil;
+        Transaction *transaction = [Transaction parseFromData: transactionData error: &transactionParseError];
+        if(!transaction || transactionParseError)
+        {
+            //Problem decoding/parsing transaction, reject and return
+            reject(@"Failed to broadcast transaction", @"Decoder/parser error", nil);
+            return;
+        }
+        
+        //Attempt to broadcast the transaction
+        Return * _Nullable broadcastResponse = [self _broadcastTransaction: transaction numberOfRetries: 10];
+        if(!broadcastResponse)
+        {
+            //Problem broadcasting transaction, reject and return
+            reject(@"Failed to broadcast transaction", @"No/bad response from host for broadcast transaction", nil);
+            return;
+        }
+        
+        //Return result
+        resolve(@(broadcastResponse.code));
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to broadcast transaction", @"Native exception thrown", error);
+    }
+}
+
+RCT_REMAP_METHOD(getOfflineSend,
+                 fromAddress:(NSString *)fromAddress
+                 toAddress:(NSString *)toAddress
+                 amount:(NSNumber * _Nonnull)amount
+                 getOfflineSendWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    @try
+    {
+        //Get data for contract
+        NSData *ownerAddressData = [fromAddress decodedBase58Data];
+        NSData *toAddressData = [toAddress decodedBase58Data];
+        
+        //Create transfer contract
+        TransferContract *transferContract = [TransferContract message];
+        transferContract.ownerAddress = ownerAddressData;
+        transferContract.toAddress = toAddressData;
+        transferContract.amount = ([amount longLongValue] * kTronClientTrxDrop);
+        
+        //Attempt to create the transaction using the transfer contract
+        Transaction * _Nullable transaction = [self _createTransactionWithTransferContract: transferContract];
+        if(!transaction)
+        {
+            //Problem creating transaction, reject and return
+            reject(@"Failed to get offline send", @"No/bad response from host for create transaction", nil);
+            return;
+        }
+        
+        //Get base64 encoded string of transaction
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
+        
+        //Return result
+        resolve(base64EncodedTransaction);
+    }
+    @catch(NSException *e)
+    {
+        //Exception, reject
+        NSDictionary *userInfo = @{ @"name": e.name, @"reason": e.reason };
+        NSError *error = [NSError errorWithDomain: @"com.bholland.tronclient" code: 0 userInfo: userInfo];
+        reject(@"Failed to get offline send", @"Native exception thrown", error);
+    }
+}
+
 RCT_REMAP_METHOD(send,
                  ownerPrivateKey:(NSString *)ownerPrivateKey
                  toAddress:(NSString *)toAddress
@@ -590,6 +729,8 @@ RCT_REMAP_METHOD(send,
             reject(@"Failed to send", @"No/bad response from host for create transaction", nil);
             return;
         }
+        
+        NSString *base64EncodedTransaction = [transaction.data base64EncodedStringWithOptions: NSDataBase64Encoding64CharacterLineLength];
         
         //Set transaction timestamp and get signature
         transaction.rawData.timestamp = ([NSDate timeIntervalSinceReferenceDate] * 1000);

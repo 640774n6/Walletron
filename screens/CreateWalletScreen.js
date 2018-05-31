@@ -48,6 +48,11 @@ export default class CreateWalletScreen extends React.Component
     );
   }
 
+  onGoToWalletPress() {
+    var hotColdRoute = this.state.type.key === 2 ? 'Cold' : 'Hot';
+    this.props.navigation.navigate(hotColdRoute);
+  }
+
   onSelectTypeDropDown(index, rowData) {
     this.setState({ type: rowData });
   }
@@ -70,7 +75,7 @@ export default class CreateWalletScreen extends React.Component
       var newWallet = {
         name: this.state.name,
         address: generatedAccount.address,
-        privateKey: generatedAccount.privateKey,
+        privateKey: this.state.type.key != 1 ? generatedAccount.privateKey : null,
         balance: 0.0,
         assets: [],
         type: this.state.type.key,
@@ -413,7 +418,7 @@ export default class CreateWalletScreen extends React.Component
               <Ionicons name='ios-checkmark-circle-outline' color='#1aaa55' size={75}/>
               <Text style={{ fontSize: 16, color: '#000000', marginBottom: 15 }}>Wallet created successfully</Text>
               <Button
-                onPress={ () => this.props.navigation.navigate('MainRoot') }
+                onPress={ this.onGoToWalletPress.bind(this) }
                 titleStyle={{ fontSize: 16 }}
                 buttonStyle={{ backgroundColor: '#777777', paddingLeft: 5, paddingRight: 5 }}
                 containerStyle={{ borderRadius: 8, overflow: 'hidden' }}

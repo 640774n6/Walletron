@@ -56,8 +56,8 @@ export default class ReceiveScreen extends React.Component
           <View style={{ alignItems: 'center', margin: 15 }}>
             <View style={{
               backgroundColor:'#ffffff',
-              borderRadius: 10,
-              padding: 10,
+              borderRadius: 8,
+              padding: 8,
               marginBottom: 15
             }}>
               <QRCode

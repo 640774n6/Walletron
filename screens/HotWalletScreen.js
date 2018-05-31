@@ -12,7 +12,7 @@ import BlockieSvg from '../libs/BlockieSvg.js';
 const HEADER_MIN_HEIGHT = 50;
 const HEADER_MAX_HEIGHT = 200;
 
-export default class WalletScreen extends React.Component {
+export default class HotWalletScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     var currentWallet = TronWalletService.getCurrentWallet();
     return {
@@ -27,8 +27,8 @@ export default class WalletScreen extends React.Component {
             ]}
             animated={false}
             showsVerticalScrollIndicator={true}
-            adjustFrame={ WalletScreen.adjustFrameWalletDropDown.bind(this) }
-            renderRow={ WalletScreen.renderWalletDropDownRow.bind(this) }
+            adjustFrame={ HotWalletScreen.adjustFrameWalletDropDown.bind(this) }
+            renderRow={ HotWalletScreen.renderWalletDropDownRow.bind(this) }
             dropdownStyle={{
               borderWidth: 1,
               borderRadius: 8,
@@ -257,7 +257,6 @@ export default class WalletScreen extends React.Component {
         <Animated.View
           style={{
             height: headerHeight,
-            backgroundColor: '#ffffff',
             position: 'absolute',
             top: 0,
             left: 0,

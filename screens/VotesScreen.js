@@ -11,6 +11,7 @@ import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view'
 
 import TronWalletService from '../libs/TronWalletService.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
+import Util from '../libs/Util.js'
 
 export default class VotesScreen extends React.Component
 {
@@ -163,6 +164,7 @@ export default class VotesScreen extends React.Component
 
   async onConfirmPress() {
     this.setState({ confirmVisible: false, votingVisible: true });
+    await Util.sleep(1000);
 
     var votes = this.getVotesFromEditWitnesses();
     var result = await TronWalletService.voteFromCurrentWallet(votes);

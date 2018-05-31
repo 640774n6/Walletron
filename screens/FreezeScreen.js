@@ -13,6 +13,7 @@ import Moment from 'moment';
 
 import TronWalletService from '../libs/TronWalletService.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
+import Util from '../libs/Util.js';
 
 export default class FreezeScreen extends React.Component
 {
@@ -35,6 +36,7 @@ export default class FreezeScreen extends React.Component
 
   async onConfirmPress() {
     this.setState({ confirmVisible: false, freezingVisible: true });
+    await Util.sleep(1000);
 
     var result = await TronWalletService.freezeBalanceFromCurrentWallet(this.state.amount, 3);
     if(result) { this.setState({ freezingVisible: false, successVisible: true }); }

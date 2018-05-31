@@ -4,11 +4,13 @@ import { NavigationActions } from 'react-navigation';
 import { FontAwesome, Entypo, MaterialCommunityIcons, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BarCodeScanner, Permissions } from 'expo';
 
-export default class ScanAddressScreen extends React.Component
+const TEST_TRANSACTION = 'Cn4KAlTzIggblv1saAM9N0C45YGruyxaZwgBEmMKLXR5cGUuZ29vZ2xlYXBpcy5jb20vcHJvdG9jb2wuVHJhbnNmZXJDb250cmFjdBIyChWgjdt99Z6MMapEuMhS0y0KO/LfhKoSFaA8c8sFZbtmKohwC1zUR9DG6Uc0+hiAiXo=';
+
+export default class ScanBarcodeScreen extends React.Component
 {
   static navigationOptions = ({ navigation }) => {
     return {
-      title: 'Scan Address',
+      title: 'Scan Barcode',
       headerLeft: (
         <TouchableOpacity onPress={ () => navigation.dispatch(NavigationActions.back()) }>
           <FontAwesome name='close' size={22} color='#ffffff' style={{ marginLeft: 15 }}/>

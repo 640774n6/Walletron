@@ -11,6 +11,7 @@ import * as Progress from 'react-native-progress';
 
 import TronWalletService from '../libs/TronWalletService.js';
 import BlockieSvg from '../libs/BlockieSvg.js';
+import Util from '../libs/Util.js';
 
 export default class SendScreen extends React.Component
 {
@@ -83,7 +84,7 @@ export default class SendScreen extends React.Component
     var params = {
       onBarcodeScanned: this.onAddressScanned.bind(this)
     }
-    this.props.navigation.navigate({ routeName: 'ScanAddress', params: params });
+    this.props.navigation.navigate({ routeName: 'ScanBarcode', params: params });
   }
 
   onAddressScanned(address) {
@@ -93,6 +94,7 @@ export default class SendScreen extends React.Component
 
   async onConfirmPress() {
     this.setState({ confirmVisible: false, sendingVisible: true });
+    await Util.sleep(1000);
 
     var result = await TronWalletService.sendAssetFromCurrentWallet(this.state.recipient.address, this.state.token.name, this.state.amount);
     if(result) { this.setState({ sendingVisible: false, successVisible: true }); }
@@ -111,6 +113,7 @@ export default class SendScreen extends React.Component
     var initState = {
       walletName : null,
       walletAddress: null,
+      walletReadonly: false,
       token: null,
       tokens: null,
       recipient: {
@@ -137,6 +140,7 @@ export default class SendScreen extends React.Component
 
       initState.walletName = currentWallet.name;
       initState.walletAddress = currentWallet.address;
+      initState.walletReadonly = (currentWallet.privateKey === null);
 
       if(tokens.length > 0)
       {

@@ -63,6 +63,39 @@ class TronWalletService {
     this._currentWallet = wallet;
   }
 
+  async signTransactionFromCurrentWallet(transaction) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var signedTransaction = await tronClient.signTransaction(this._currentWallet.privateKey, transaction);
+
+        return signedTransaction;
+      }
+      catch (error)
+      { console.log(`TronWalletService.signTransaction() => error: ${error}`); }
+    }
+    return null;
+  }
+
+  async broadcastTransaction(transaction) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var result = await tronClient.broadcastTransaction(transaction);
+
+        console.log(`TronWalletService.broadcastTransaction() => result: ${result}`);
+        return (result === 0);
+      }
+      catch (error)
+      { console.log(`TronWalletService.broadcastTransaction() => error: ${error}`); }
+    }
+    return false;
+  }
+
   async validateAddress(address) {
     try {
       var tronClient = NativeModules.TronClient;
@@ -183,6 +216,22 @@ class TronWalletService {
       catch (error)
       { console.log(`TronWalletService.voteFromCurrentWallet() => error: ${error}`); }
     }
+  }
+
+  async getOfflineSendFromCurrentWallet(toAddress, amount) {
+    if(this._currentWallet)
+    {
+      try
+      {
+        var tronClient = NativeModules.TronClient;
+        var offlineSendTransaction = await tronClient.getOfflineSend(this._currentWallet.address, toAddress, amount);
+
+        return offlineSendTransaction;
+      }
+      catch (error)
+      { console.log(`TronWalletService.getOfflineSendFromCurrentWallet() => error: ${error}`); }
+    }
+    return null;
   }
 
   async getWitnesses() {
